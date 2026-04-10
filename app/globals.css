@@ -8,8 +8,6 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -18,6 +16,27 @@
     --foreground: #ededed;
   }
 }
+
+html { scroll-behavior: smooth; }
+
+@keyframes slowzoom {
+  from { transform: scale(1.06); }
+  to { transform: scale(1.12); }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(36px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scrollpulse {
+  0%,100% { opacity: 0.3; transform: scaleY(0.8); }
+  50% { opacity: 1; transform: scaleY(1); }
+}
+
+.animate-slowzoom { animation: slowzoom 18s ease-in-out infinite alternate; }
+.animate-fadeUp { animation: fadeUp 1.2s ease both; }
+.animate-scrollpulse { animation: scrollpulse 2s ease-in-out infinite; }
 
 body {
   background: var(--background);
