@@ -2,27 +2,27 @@ import Image from "next/image";
 
 const GALLERY_IMAGES = [
   {
-    url: "https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=800&q=80",
+    url: "/images/main_hero.jpeg",
     label: "Открытый павильон",
   },
   {
-    url: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=800&q=80",
+    url: "/images/towel_oil.jpeg",
     label: "Тропическая атмосфера",
   },
   {
-    url: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&q=80",
+    url: "/images/woman_abs.jpeg",
     label: "Ритуалы Бали",
   },
   {
-    url: "https://images.unsplash.com/photo-1519823551278-64ac92734fb1?w=800&q=80",
+    url: "/images/massage_back.jpeg",
     label: "Камни и масла",
   },
   {
-    url: "https://images.unsplash.com/photo-1596178060810-72f53ce9a65c?w=800&q=80",
+    url: "/images/pool_view.jpeg",
     label: "Лепестки и свет",
   },
   {
-    url: "https://images.unsplash.com/photo-1507652313519-d4e9174996dd?w=800&q=80",
+    url: "/images/open_bath.jpeg",
     label: "Покой джунглей",
   },
 ];

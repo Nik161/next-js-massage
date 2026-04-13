@@ -8,7 +8,7 @@ export default function Hero() {
       className="relative h-screen min-h-170 flex items-center justify-center overflow-hidden"
       ref={heroRef}
     >
-      <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=1600&q=85')] bg-cover bg-center animate-slowzoom" />
+      <div className="absolute inset-0 bg-[url('/images/main_hero.jpeg')] bg-cover bg-center animate-slowzoom" />
       <div className="absolute inset-0 bg-linear-to-br from-[#1a2e1e]/70 via-[#1a2e1e]/45 to-[#b5633a]/25" />
 
       <div className="relative z-10 text-center text-[#f5ede0] px-6 max-w-195 animate-fadeUp">
