@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import MassageName from "@/app/ui/massage_name";
+import Link from "next/link";
 
 export default function Header() {
   const NAV_LINKS = [
@@ -27,12 +28,12 @@ export default function Header() {
           : ""
       }`}
     >
-      <a
-        href="#"
+      <Link
+        href="/"
         className="font-['Cormorant_Garamond',serif] text-2xl font-semibold tracking-[0.05em] text-[#f5ede0] no-underline flex items-center gap-2.5"
       >
         <MassageName />
-      </a>
+      </Link>
 
       <ul className="hidden md:flex gap-10 list-none">
         {NAV_LINKS.map((l) => (
@@ -48,16 +49,7 @@ export default function Header() {
       </ul>
 
       <button className="hidden md:block text-[0.75rem] tracking-[0.18em] uppercase font-medium px-6 py-2.5 border border-[#c9a84c] text-[#c9a84c] bg-transparent cursor-pointer transition-all duration-300 hover:bg-[#c9a84c] hover:text-[#1a2e1b] font-['Jost',sans-serif]">
-        Записаться
-      </button>
-
-      <button
-        className="md:hidden flex flex-col gap-1 bg-transparent border-none cursor-pointer p-1"
-        aria-label="Меню"
-      >
-        <span className="block w-[26px] h-[1.5px] bg-[#f5ede0] transition-all duration-300" />
-        <span className="block w-[26px] h-[1.5px] bg-[#f5ede0] transition-all duration-300" />
-        <span className="block w-[26px] h-[1.5px] bg-[#f5ede0] transition-all duration-300" />
+        <Link href="/booking">Записаться</Link>
       </button>
     </nav>
   );
