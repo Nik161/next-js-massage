@@ -34,6 +34,17 @@ html { scroll-behavior: smooth; }
   50% { opacity: 1; transform: scaleY(1); }
 }
 
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .animate-slowzoom { animation: slowzoom 18s ease-in-out infinite alternate; }
 .animate-fadeUp { animation: fadeUp 1.2s ease both; }
 .animate-scrollpulse { animation: scrollpulse 2s ease-in-out infinite; }
@@ -41,5 +52,5 @@ html { scroll-behavior: smooth; }
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: Arial, Helvetica, sans-serif, Garamond;
 }

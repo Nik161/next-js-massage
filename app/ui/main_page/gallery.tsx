@@ -43,10 +43,7 @@ export default function Gallery() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-w-300 mx-auto mt-15">
         {GALLERY_IMAGES.map((img, i) => (
-          <div
-            key={i}
-            className={`overflow-hidden relative cursor-pointer group`}
-          >
+          <div key={i} className={`overflow-hidden relative  group`}>
             <Image
               src={img.url}
               alt={img.label}

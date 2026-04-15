@@ -1,5 +1,6 @@
 import MassageName from "@/app/ui/massage_name";
 import { CURRENT_YEAR } from "@/app/constants/current_year";
+import Link from "next/link";
 
 export default function Footer() {
   return (
@@ -7,7 +8,9 @@ export default function Footer() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-15 pb-15 border-b border-[#c9a84c]/25 mb-10">
         <div>
           <h3 className="font-['Cormorant_Garamond',serif] text-[1.8rem] font-semibold text-[#f5ede0] mb-4">
-            <MassageName />
+            <Link href="/">
+              <MassageName />
+            </Link>
           </h3>
           <p className="text-[0.88rem] leading-[1.8] font-light max-w-70">
             Массажный салон с лучшими массажными практиками со всего мира.

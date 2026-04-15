@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import Link from "next/link";
 
 export default function Hero() {
   const heroRef = useRef(null);
@@ -25,7 +26,7 @@ export default function Hero() {
         </p>
         <div className="flex gap-4 justify-center flex-wrap">
           <button className="px-9.5 py-3.75 text-[0.78rem] tracking-[0.18em] uppercase font-medium bg-[#b5633a] text-[#f5ede0] border-none cursor-pointer transition-all duration-300 hover:bg-[#c97050] hover:-translate-y-0.5">
-            Записаться на сеанс
+            <Link href="/booking">Записаться на сеанс</Link>
           </button>
           <button className="px-9.5 py-3.5 text-[0.78rem] tracking-[0.18em] uppercase font-normal bg-transparent text-[#f5ede0] border border-[#f5ede0]/50 cursor-pointer transition-all duration-300 hover:border-[#f5ede0]">
             Наши ритуалы
