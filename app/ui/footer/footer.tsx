@@ -14,7 +14,7 @@ export default function Footer() {
           </h3>
           <p className="text-[0.88rem] leading-[1.8] font-light max-w-70">
             Массажный салон с лучшими массажными практиками со всего мира.
-            Только сертифицированные специалисты с многолетним опытом
+            Сертифицированный специалист с многолетним опытом
           </p>
         </div>
 
@@ -27,7 +27,7 @@ export default function Footer() {
               "Балийский массаж",
               "Тайский массаж",
               "Релакс массаж",
-              "Тайский стретчинг",
+              "Скорая массажная помощь",
               "Спортивный массаж",
             ].map((l) => (
               <li key={l}>
@@ -47,18 +47,16 @@ export default function Footer() {
             Информация
           </h4>
           <ul className="list-none flex flex-col gap-3">
-            {["О нас", "Галерея", "Цены", "Подарочные сертификаты", "Блог"].map(
-              (l) => (
-                <li key={l}>
-                  <a
-                    href="#"
-                    className="text-[0.88rem] text-[#f5ede0]/60 no-underline transition-colors duration-300 font-light hover:text-[#f5ede0]"
-                  >
-                    {l}
-                  </a>
-                </li>
-              ),
-            )}
+            {["О нас", "Галерея", "Цены", "Блог"].map((l) => (
+              <li key={l}>
+                <a
+                  href="#"
+                  className="text-[0.88rem] text-[#f5ede0]/60 no-underline transition-colors duration-300 font-light hover:text-[#f5ede0]"
+                >
+                  {l}
+                </a>
+              </li>
+            ))}
           </ul>
         </div>
 

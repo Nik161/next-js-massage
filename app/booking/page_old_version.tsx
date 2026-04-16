@@ -8,7 +8,7 @@ import BookingSidebar from "@/app/ui/booking/booking_sidebar";
 import SubmitModal from "@/app/ui/booking/submit_modal";
 import { formatDate } from "@/app/helpers/formatDate";
 
-export default function BookingPage() {
+export default function BookingPageOld() {
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);

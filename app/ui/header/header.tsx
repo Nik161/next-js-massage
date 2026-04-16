@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react";
 import MassageName from "@/app/ui/massage_name";
 import Link from "next/link";
+import { cormorant } from "@/app/ui/fonts";
 
 export default function Header() {
-  const NAV_LINKS = ["Услуги", "О нас", "Цены", "Контакты", "Мастера"];
+  const NAV_LINKS = ["Услуги", "О нас", "Мастера"];
 
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -35,7 +36,7 @@ export default function Header() {
   return (
     <>
       <nav
-        className={`fixed top-0 left-0 right-0 z-50 px-4 sm:px-6 md:px-[5vw] h-[64px] sm:h-[68px] md:h-[72px] flex items-center justify-between transition-all duration-500 ${
+        className={`fixed top-0 left-0 right-0 z-50 px-4 sm:px-6 md:px-[5vw] h-16 sm:h-17 md:h-18 flex items-center justify-between transition-all duration-500 ${
           scrolled
             ? "bg-[#1a2e1b]/90 backdrop-blur-lg shadow-[0_1px_0_rgba(201,168,76,0.2)]"
             : "bg-transparent"
@@ -44,26 +45,26 @@ export default function Header() {
         {/* Логотип */}
         <Link
           href="/"
-          className="font-['Cormorant_Garamond',serif] text-xl sm:text-2xl md:text-2xl font-semibold tracking-[0.05em] text-[#f5ede0] no-underline flex items-center gap-2 z-50"
+          className={`${cormorant.className} text-xl sm:text-2xl md:text-2xl font-semibold tracking-[0.05em] text-[#f5ede0] no-underline flex items-center gap-2 z-50`}
         >
           <MassageName />
         </Link>
 
         {/* Десктопное меню (md и выше) */}
-        <ul className="hidden md:flex gap-6 lg:gap-10 list-none items-center">
-          {NAV_LINKS.map((l) => (
-            <li key={l}>
-              <a
-                href="#"
-                className="text-[0.7rem] lg:text-[0.78rem] font-normal tracking-[0.18em] uppercase text-[#f5ede0]/80 no-underline transition-all duration-300 pb-1 relative
-                  after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-px after:bg-[#c9a84c] after:transition-all after:duration-300
-                  hover:text-[#c9a84c] hover:after:w-full"
-              >
-                {l}
-              </a>
-            </li>
-          ))}
-        </ul>
+        {/*<ul className="hidden md:flex gap-6 lg:gap-10 list-none items-center">*/}
+        {/*  {NAV_LINKS.map((l) => (*/}
+        {/*    <li key={l}>*/}
+        {/*      <a*/}
+        {/*        href="#"*/}
+        {/*        className="text-[0.7rem] lg:text-[0.78rem] font-normal tracking-[0.18em] uppercase text-[#f5ede0]/80 no-underline transition-all duration-300 pb-1 relative*/}
+        {/*          after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-px after:bg-[#c9a84c] after:transition-all after:duration-300*/}
+        {/*          hover:text-[#c9a84c] hover:after:w-full"*/}
+        {/*      >*/}
+        {/*        {l}*/}
+        {/*      </a>*/}
+        {/*    </li>*/}
+        {/*  ))}*/}
+        {/*</ul>*/}
 
         {/* Десктопная кнопка */}
         <Link
@@ -107,26 +108,26 @@ export default function Header() {
       >
         <div className="flex flex-col items-center justify-center min-h-screen pt-20 pb-8 px-6">
           {/* Мобильные навигационные ссылки */}
-          <ul className="flex flex-col items-center gap-6 mb-12">
-            {NAV_LINKS.map((l, index) => (
-              <li
-                key={l}
-                style={{
-                  animation: `fadeInUp 0.4s ease-out forwards`,
-                  animationDelay: `${index * 0.05}s`,
-                  opacity: 0,
-                }}
-              >
-                <a
-                  href="#"
-                  onClick={handleLinkClick}
-                  className="text-[1.1rem] font-normal tracking-[0.2em] uppercase text-[#f5ede0]/90 no-underline transition-all duration-300 hover:text-[#c9a84c] hover:tracking-[0.25em] block py-2"
-                >
-                  {l}
-                </a>
-              </li>
-            ))}
-          </ul>
+          {/*<ul className="flex flex-col items-center gap-6 mb-12">*/}
+          {/*  {NAV_LINKS.map((l, index) => (*/}
+          {/*    <li*/}
+          {/*      key={l}*/}
+          {/*      style={{*/}
+          {/*        animation: `fadeInUp 0.4s ease-out forwards`,*/}
+          {/*        animationDelay: `${index * 0.05}s`,*/}
+          {/*        opacity: 0,*/}
+          {/*      }}*/}
+          {/*    >*/}
+          {/*      <a*/}
+          {/*        href="#"*/}
+          {/*        onClick={handleLinkClick}*/}
+          {/*        className="text-[1.1rem] font-normal tracking-[0.2em] uppercase text-[#f5ede0]/90 no-underline transition-all duration-300 hover:text-[#c9a84c] hover:tracking-[0.25em] block py-2"*/}
+          {/*      >*/}
+          {/*        {l}*/}
+          {/*      </a>*/}
+          {/*    </li>*/}
+          {/*  ))}*/}
+          {/*</ul>*/}
 
           {/* Мобильная кнопка записи */}
           <Link
@@ -144,7 +145,7 @@ export default function Header() {
 
           {/* Декоративный элемент */}
           <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-center text-[0.65rem] tracking-[0.2em] text-[#c9a84c]/50">
-            ✦ Тайская СПА студия ✦
+            ✦ Niko Massage Studio ✦
           </div>
         </div>
       </div>

@@ -10,11 +10,11 @@ export default function HomePage() {
   return (
     <div className="bg-[#f5ede0] text-[#2a1f14] overflow-x-hidden font-['Jost',sans-serif]">
       <Hero />
-      <Strip />
-      <About />
-      <Services />
-      <Gallery />
-      <Banner />
+      {/*<Strip />*/}
+      {/*<About />*/}
+      {/*<Services />*/}
+      {/*<Gallery />*/}
+      {/*<Banner />*/}
     </div>
   );
 }
