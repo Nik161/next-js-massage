@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import "./globals.css";
 import Header from "@/app/ui/header/header";
+import HeroBooking from "@/app/ui/booking/hero";
 import { cormorant } from "@/app/ui/fonts";
 
 export const metadata: Metadata = {
@@ -14,11 +14,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full antialiased">
-      <body className={` min-h-full flex flex-col `}>
-        <Header />
-        <div>{children}</div>
-      </body>
-    </html>
+    <div className="w-full h-screen md:flex-row md:overflow-hidden">
+      <Header />
+      <HeroBooking />
+      <div className={`min-h-full flex flex-col `}>{children}</div>
+    </div>
   );
 }

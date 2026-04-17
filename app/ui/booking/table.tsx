@@ -1,7 +1,6 @@
-import Image from "next/image";
-import { formatDateToLocal, formatCurrency } from "@/app/lib/utils";
 import BookingStatus from "@/app/ui/booking/booking_status";
 import { DeleteBooking, UpdateBooking } from "@/app/ui/shared/buttons";
+import { fetchFilteredBookings } from "@/app/lib/data";
 
 export default async function BookingTable({
   query,
@@ -10,77 +9,68 @@ export default async function BookingTable({
   query: string;
   currentPage: number;
 }) {
-  // const invoices = await fetchFilteredInvoices(query, currentPage);
-  const bookings = [
-    {
-      id: "1",
-      status: "passed",
-      userName: "Kristina",
-      email: "asia-avtocredit@mail.ru",
-      date: "16-04-2026",
-      duration: "30 min",
-    },
-  ];
+  const bookings = await fetchFilteredBookings(query, currentPage);
+  console.log("bookings here", bookings);
 
   return (
     <div className="mt-6 flow-root">
       <div className="inline-block min-w-full align-middle">
         <div className="rounded-lg bg-gray-50 p-2 md:pt-0">
-          <div className="md:hidden">
-            {bookings?.map((booking) => (
-              <div
-                key={booking.id}
-                className="mb-2 w-full rounded-md bg-white p-4"
-              >
-                <div className="flex items-center justify-between border-b pb-4">
-                  <div>
-                    <div className="mb-2 flex items-center">
-                      {/*<Image*/}
-                      {/*  src={booking.image_url}*/}
-                      {/*  className="mr-2 rounded-full"*/}
-                      {/*  width={28}*/}
-                      {/*  height={28}*/}
-                      {/*  alt={`${booking.name}'s profile picture`}*/}
-                      {/*/>*/}
-                      <p>{booking.userName}</p>
-                    </div>
-                    <p className="text-sm text-gray-500">{booking.email}</p>
-                  </div>
-                  <BookingStatus status={booking.status} />
-                </div>
-                <div className="flex w-full items-center justify-between pt-4">
-                  <div>
-                    <p className="text-xl font-medium">{booking.duration}</p>
-                    <p>{booking.date}</p>
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <UpdateBooking id={booking.id} />
-                    <DeleteBooking id={booking.id} />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-          <table className="hidden min-w-full text-gray-900 md:table">
+          {/*<div className="md:hidden">*/}
+          {/*  {bookings?.map((booking) => (*/}
+          {/*    <div*/}
+          {/*      key={booking.id}*/}
+          {/*      className="mb-2 w-full rounded-md bg-white p-4"*/}
+          {/*    >*/}
+          {/*      <div className="flex items-center justify-between border-b pb-4">*/}
+          {/*        <div>*/}
+          {/*          <div className="mb-2 flex items-center">*/}
+          {/*            <Image*/}
+          {/*              src={booking.image_url}*/}
+          {/*              className="mr-2 rounded-full"*/}
+          {/*              width={28}*/}
+          {/*              height={28}*/}
+          {/*              alt={`${booking.name}'s profile picture`}*/}
+          {/*            />*/}
+          {/*            <p>{booking.userName}</p>*/}
+          {/*          </div>*/}
+          {/*          <p className="text-sm text-gray-500">{booking.email}</p>*/}
+          {/*        </div>*/}
+          {/*        <BookingStatus status={booking.status} />*/}
+          {/*      </div>*/}
+          {/*      <div className="flex w-full items-center justify-between pt-4">*/}
+          {/*        <div>*/}
+          {/*          <p className="text-xl font-medium">{booking.duration}</p>*/}
+          {/*          <p>{booking.date.toString()}</p>*/}
+          {/*        </div>*/}
+          {/*        <div className="flex justify-end gap-2">*/}
+          {/*          <UpdateBooking id={booking.id} />*/}
+          {/*          <DeleteBooking id={booking.id} />*/}
+          {/*        </div>*/}
+          {/*      </div>*/}
+          {/*    </div>*/}
+          {/*  ))}*/}
+          {/*</div>*/}
+          <table className="hidden min-w-full text-gray-900 md:table text-xl">
             <thead className="rounded-lg text-left text-sm font-normal">
-              <tr>
+              <tr className="text-2xl">
                 <th scope="col" className="px-4 py-5 font-medium sm:pl-6">
-                  Customer
+                  Клиент
                 </th>
                 <th scope="col" className="px-3 py-5 font-medium">
-                  Email
+                  Тип массажа
                 </th>
                 <th scope="col" className="px-3 py-5 font-medium">
-                  Amount
+                  Продолжительность
                 </th>
                 <th scope="col" className="px-3 py-5 font-medium">
-                  Date
+                  Дата/Время
                 </th>
                 <th scope="col" className="px-3 py-5 font-medium">
-                  Status
+                  Статус Бронирования
                 </th>
                 <th scope="col" className="relative py-3 pl-6 pr-3">
-                  <span className="sr-only">Edit</span>
+                  <span className="sr-only">Редактировать</span>
                 </th>
               </tr>
             </thead>
@@ -88,7 +78,7 @@ export default async function BookingTable({
               {bookings?.map((booking) => (
                 <tr
                   key={booking.id}
-                  className="w-full border-b py-3 text-sm last-of-type:border-none [&:first-child>td:first-child]:rounded-tl-lg [&:first-child>td:last-child]:rounded-tr-lg [&:last-child>td:first-child]:rounded-bl-lg [&:last-child>td:last-child]:rounded-br-lg"
+                  className="w-full text-xl border-b py-3 last-of-type:border-none [&:first-child>td:first-child]:rounded-tl-lg [&:first-child>td:last-child]:rounded-tr-lg [&:last-child>td:first-child]:rounded-bl-lg [&:last-child>td:last-child]:rounded-br-lg"
                 >
                   <td className="whitespace-nowrap py-3 pl-6 pr-3">
                     <div className="flex items-center gap-3">
@@ -99,11 +89,11 @@ export default async function BookingTable({
                       {/*  height={28}*/}
                       {/*  alt={`${booking.name}'s profile picture`}*/}
                       {/*/>*/}
-                      <p>{booking.userName}</p>
+                      <p>{booking.user_name}</p>
                     </div>
                   </td>
                   <td className="whitespace-nowrap px-3 py-3">
-                    {booking.email}
+                    {booking.massage_type}
                   </td>
                   <td className="whitespace-nowrap px-3 py-3">
                     {booking.duration}
