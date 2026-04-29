@@ -1,30 +1,28 @@
-// import { fetchCustomers, fetchInvoiceById } from "@/app/lib/data";
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
-import HeroBooking from "@/app/ui/booking/hero";
+import EditBookingForm from "@/app/ui/booking/edit_form";
 
 export const metadata: Metadata = {
-  title: "Edit Invoice",
+  title: "Edit Massage Reservation",
 };
 
 export default async function Page(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
   const id = params.id;
   console.log("id", id);
+  // const bookings = await fetchBookingById(id);
   // const [invoice, customers] = await Promise.all([
   //   fetchInvoiceById(id),
   //   fetchCustomers(),
   // ]);
-
-  // if (!invoice) {
-  notFound();
+  //
+  // if (!bookings) {
+  //   notFound();
   // }
 
   return (
-    <main>
-      <HeroBooking />
-      EDIT PAGE
-      {/*<Form invoice={invoice} customers={customers} />*/}
+    <main className="min-w-3/4 flex mx-auto mt-10">
+      <EditBookingForm />
     </main>
   );
 }

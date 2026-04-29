@@ -5,7 +5,7 @@ import { cormorant } from "@/app/ui/fonts";
 
 export const metadata: Metadata = {
   title: "Niko Massage",
-  description: "Niko Massage booking site",
+  description: "Niko Massage bookings site",
 };
 
 export default function RootLayout({

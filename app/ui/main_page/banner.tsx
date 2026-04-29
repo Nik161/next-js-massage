@@ -18,7 +18,7 @@ export default function Banner() {
          uppercase font-medium bg-[#b5633a] text-[#f5ede0] border-none
           cursor-pointer transition-all duration-300 hover:bg-[#c97050] hover:-translate-y-0.5"
         >
-          <Link href="/booking">Записаться прямо сейчас</Link>
+          <Link href="/bookings">Записаться прямо сейчас</Link>
         </button>
       </div>
     </section>

@@ -67,12 +67,24 @@ export default function Header() {
         {/*</ul>*/}
 
         {/* Десктопная кнопка */}
-        <Link
-          href="/booking"
-          className="hidden md:block text-[0.7rem] lg:text-[0.75rem] tracking-[0.18em] uppercase font-medium px-4 lg:px-6 py-2 lg:py-2.5 border border-[#c9a84c] text-[#c9a84c] bg-transparent cursor-pointer transition-all duration-300 hover:bg-[#c9a84c] hover:text-[#1a2e1b] font-['Jost',sans-serif]"
-        >
-          Записаться
-        </Link>
+        <div className="flex gap-10">
+          <Link
+            href="/bookings/create"
+            className="hidden md:block text-[0.7rem] lg:text-[0.75rem] tracking-[0.18em] uppercase
+             font-medium px-4 lg:px-6 py-2 lg:py-2.5 border border-[#c9a84c] text-[#c9a84c] bg-transparent
+              cursor-pointer transition-all duration-300 hover:bg-[#c9a84c] hover:text-[#1a2e1b] font-['Jost',sans-serif]"
+          >
+            Записаться
+          </Link>
+          <Link
+            href="/bookings"
+            className="hidden md:block text-[0.7rem] lg:text-[0.75rem] tracking-[0.18em] uppercase
+             font-medium px-4 lg:px-6 py-2 lg:py-2.5 border border-[#c9a84c] text-[#c9a84c] bg-transparent
+              cursor-pointer transition-all duration-300 hover:bg-[#c9a84c] hover:text-[#1a2e1b] font-['Jost',sans-serif]"
+          >
+            Мои Записи
+          </Link>
+        </div>
 
         {/* Мобильная кнопка-бургер (до md) */}
         <button
@@ -131,7 +143,7 @@ export default function Header() {
 
           {/* Мобильная кнопка записи */}
           <Link
-            href="/booking"
+            href="/bookings"
             onClick={handleLinkClick}
             className="text-[0.8rem] tracking-[0.2em] uppercase font-medium px-8 py-3 border-2 border-[#c9a84c] text-[#c9a84c] bg-transparent cursor-pointer transition-all duration-300 hover:bg-[#c9a84c] hover:text-[#1a2e1b] font-['Jost',sans-serif]"
             style={{
