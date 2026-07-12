@@ -1,1 +1,1 @@
-export const MASSAGE_DURATIONS = [10, 20, 30, 40, 50, 60];
+export const MASSAGE_DURATIONS = [30, 60, 90];

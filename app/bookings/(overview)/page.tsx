@@ -3,7 +3,7 @@ import Search from "@/app/ui/shared/search";
 import { CreateBooking } from "@/app/ui/shared/buttons";
 import Pagination from "@/app/ui/shared/pagination";
 import BookingTable from "@/app/ui/booking/table";
-import { fetchFilteredBookings } from "@/app/lib/data";
+import { fetchBookingsPages, fetchFilteredBookings } from "@/app/lib/data";
 
 export default async function Page(props: {
   searchParams?: Promise<{
@@ -14,9 +14,7 @@ export default async function Page(props: {
   const searchParams = await props.searchParams;
   const query = searchParams?.query || "";
   const currentPage = Number(searchParams?.page) || 1;
-  // const totalPages = await fetchInvoicesPages(query);
-  const bookings = await fetchFilteredBookings(query, currentPage);
-  console.log("bookings", bookings);
+  const totalPages = await fetchBookingsPages(query);
 
   return (
     <div className="min-h-screen">
@@ -32,7 +30,7 @@ export default async function Page(props: {
             </div>
             <BookingTable query={query} currentPage={currentPage} />
             <div className="mt-5 flex w-full justify-center">
-              <Pagination totalPages={3} />
+              <Pagination totalPages={totalPages} />
             </div>
           </div>
         </div>

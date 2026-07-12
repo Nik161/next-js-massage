@@ -10,6 +10,7 @@ export default async function BookingTable({
   currentPage: number;
 }) {
   const bookings = await fetchFilteredBookings(query, currentPage);
+  console.log("bookings", bookings);
 
   return (
     <div className="mt-6 flow-root">
