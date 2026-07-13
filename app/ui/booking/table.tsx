@@ -16,41 +16,46 @@ export default async function BookingTable({
     <div className="mt-6 flow-root">
       <div className="inline-block min-w-full align-middle">
         <div className="rounded-lg bg-gray-50 p-2 md:pt-0">
-          {/*<div className="md:hidden">*/}
-          {/*  {bookings?.map((bookings) => (*/}
-          {/*    <div*/}
-          {/*      key={bookings.id}*/}
-          {/*      className="mb-2 w-full rounded-md bg-white p-4"*/}
-          {/*    >*/}
-          {/*      <div className="flex items-center justify-between border-b pb-4">*/}
-          {/*        <div>*/}
-          {/*          <div className="mb-2 flex items-center">*/}
-          {/*            <Image*/}
-          {/*              src={bookings.image_url}*/}
-          {/*              className="mr-2 rounded-full"*/}
-          {/*              width={28}*/}
-          {/*              height={28}*/}
-          {/*              alt={`${bookings.name}'s profile picture`}*/}
-          {/*            />*/}
-          {/*            <p>{bookings.userName}</p>*/}
-          {/*          </div>*/}
-          {/*          <p className="text-sm text-gray-500">{bookings.email}</p>*/}
-          {/*        </div>*/}
-          {/*        <BookingStatus status={bookings.status} />*/}
-          {/*      </div>*/}
-          {/*      <div className="flex w-full items-center justify-between pt-4">*/}
-          {/*        <div>*/}
-          {/*          <p className="text-xl font-medium">{bookings.duration}</p>*/}
-          {/*          <p>{bookings.date.toString()}</p>*/}
-          {/*        </div>*/}
-          {/*        <div className="flex justify-end gap-2">*/}
-          {/*          <UpdateBooking id={bookings.id} />*/}
-          {/*          <DeleteBooking id={bookings.id} />*/}
-          {/*        </div>*/}
-          {/*      </div>*/}
-          {/*    </div>*/}
-          {/*  ))}*/}
-          {/*</div>*/}
+          {/* MOBILE VIEW*/}
+          <div className="md:hidden">
+            {bookings?.map((booking) => (
+              <div
+                key={booking.id}
+                className="mb-2 w-full rounded-md bg-white p-4"
+              >
+                <div className="flex items-center justify-between border-b pb-4">
+                  <div>
+                    <div className="mb-2 flex items-center">
+                      {/*<Image*/}
+                      {/*  src={bookings.image_url}*/}
+                      {/*  className="mr-2 rounded-full"*/}
+                      {/*  width={28}*/}
+                      {/*  height={28}*/}
+                      {/*  alt={`${bookings.name}'s profile picture`}*/}
+                      {/*/>*/}
+                      <p>{booking.user_name}</p>
+                    </div>
+                    {/*<p className="text-sm text-gray-500">{booking.email}</p>*/}
+                  </div>
+                  <BookingStatus status={booking.status} />
+                </div>
+                <div className="flex w-full items-center justify-between pt-4">
+                  <div>
+                    <p className="text-xl font-medium">
+                      {booking.duration} минут
+                    </p>
+                    <p>{booking.date.toString()}</p>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <UpdateBooking id={booking.id} />
+                    <DeleteBooking id={booking.id} />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* BIG SCREEN VIEW*/}
           <table className="hidden min-w-full text-gray-900 md:table text-xl">
             <thead className="rounded-lg text-left text-sm font-normal">
               <tr className="text-2xl">
@@ -58,7 +63,7 @@ export default async function BookingTable({
                   Клиент
                 </th>
                 <th scope="col" className="px-3 py-5 font-medium">
-                  Тип массажа
+                  Тип
                 </th>
                 <th scope="col" className="px-3 py-5 font-medium">
                   Продолжительность
@@ -67,7 +72,7 @@ export default async function BookingTable({
                   Дата/Время
                 </th>
                 <th scope="col" className="px-3 py-5 font-medium">
-                  Статус Бронирования
+                  Статус
                 </th>
                 <th scope="col" className="relative py-3 pl-6 pr-3">
                   <span className="sr-only">Редактировать</span>
@@ -88,7 +93,7 @@ export default async function BookingTable({
                   <td className="whitespace-nowrap px-3 py-3">
                     {booking.massage_type}
                   </td>
-                  <td className="whitespace-nowrap px-3 py-3">
+                  <td className="whitespace-nowrap px-3 py-3 text-center">
                     {booking.duration}
                   </td>
                   <td className="whitespace-nowrap px-3 py-3">

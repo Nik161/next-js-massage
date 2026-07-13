@@ -16,9 +16,9 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
   //   fetchCustomers(),
   // ]);
   //
-  // if (!bookings) {
-  //   notFound();
-  // }
+  if (!booking) {
+    notFound();
+  }
 
   return (
     <main className="min-w-3/4 flex mx-auto mt-10">

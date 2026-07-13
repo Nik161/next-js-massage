@@ -1,29 +1,27 @@
 "use client";
 
-import { Button } from "@/app/ui/shared/button";
-import Link from "next/link";
-import { CalendarDaysIcon, ListBulletIcon } from "@heroicons/react/24/outline";
 import { MASSAGE_TYPES } from "@/app/constants/massage_types";
-import "../styles/datepicker.css";
+import { CalendarDaysIcon, ListBulletIcon } from "@heroicons/react/24/outline";
 import { MASSAGE_DURATIONS } from "@/app/constants/massage_durations";
-import { BookingResponse, State } from "@/app/lib/definitions";
+import Link from "next/link";
+import { Button } from "@/app/ui/shared/button";
+import { State } from "@/app/lib/definitions";
 import { useActionState } from "react";
-import { updateBooking } from "@/app/lib/actions";
+import { createBooking } from "@/app/lib/actions";
 
-export default function EditBookingForm({
-  booking,
-}: {
-  booking: BookingResponse;
-}) {
-  const updateInvoiceWithId = updateBooking.bind(null, booking.id);
+export default function CreateBookingForm() {
+  const defaultDateTime = new Date().toISOString().split("T")[0] + "T19:00";
+  const defaultMassageType = "relax";
+  const defaultMassageDuration = 30;
   const initialState: State = { message: null, errors: {} };
-  const [state, formAction] = useActionState(updateInvoiceWithId, initialState);
+  const [state, formAction] = useActionState(createBooking, initialState);
+
   return (
     <form className="w-full min-w-full" action={formAction}>
       <div className="rounded-md bg-gray-50 p-4 md:p-6">
         {/* Customer Name */}
         <div className="mb-4">
-          <h1 className="text-2xl">{booking.user_name}</h1>
+          <h1 className="text-2xl">username</h1>
         </div>{" "}
         {/* Booking type */}
         <div className="mb-4">
@@ -36,7 +34,7 @@ export default function EditBookingForm({
                 id="massage_type"
                 name="massage_type"
                 className="peer block w-full cursor-pointer rounded-md border border-gray-200 py-2 pl-10 outline-2 placeholder:text-gray-500"
-                defaultValue={booking.massage_type}
+                defaultValue={defaultMassageType}
                 // aria-describedby="customer-error"
               >
                 <option value="" disabled>
@@ -71,7 +69,7 @@ export default function EditBookingForm({
               id="booking_date"
               name="booking_date"
               type="datetime-local"
-              defaultValue={booking.date}
+              defaultValue={defaultDateTime}
             />
             <CalendarDaysIcon className="pointer-events-none absolute left-3 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
           </div>
@@ -87,7 +85,7 @@ export default function EditBookingForm({
                 id="booking_duration"
                 name="booking_duration"
                 className="peer block w-full cursor-pointer rounded-md border border-gray-200 py-2 pl-10 outline-2 placeholder:text-gray-500"
-                defaultValue={booking.duration}
+                defaultValue={defaultMassageDuration}
               >
                 <option value="" disabled>
                   Выберите продолжительность
@@ -162,7 +160,7 @@ export default function EditBookingForm({
         >
           Назад
         </Link>
-        <Button type="submit">Редактировать</Button>
+        <Button type="submit">Записаться</Button>
       </div>
     </form>
   );

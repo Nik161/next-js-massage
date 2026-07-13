@@ -3,7 +3,7 @@ import Search from "@/app/ui/shared/search";
 import { CreateBooking } from "@/app/ui/shared/buttons";
 import Pagination from "@/app/ui/shared/pagination";
 import BookingTable from "@/app/ui/booking/table";
-import { fetchBookingsPages, fetchFilteredBookings } from "@/app/lib/data";
+import { fetchBookingsPages } from "@/app/lib/data";
 
 export default async function Page(props: {
   searchParams?: Promise<{
