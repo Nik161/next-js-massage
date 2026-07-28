@@ -2,7 +2,6 @@ import { CheckIcon, ClockIcon, TrophyIcon } from "@heroicons/react/24/outline";
 import clsx from "clsx";
 
 export default function BookingStatus({ status }: { status: string }) {
-  console.log("status", status);
   return (
     <span
       className={clsx(

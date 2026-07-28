@@ -33,7 +33,7 @@ export function DeleteBooking({ id }: { id: string }) {
     <ConfirmModal
       action={deleteBookingWithId}
       actionText="удаление бронирования"
-      buttonText="удалитьл"
+      buttonText="Удалить"
     />
   );
 

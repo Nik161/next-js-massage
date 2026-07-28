@@ -1,6 +1,7 @@
 import BookingStatus from "@/app/ui/booking/booking_status";
 import { DeleteBooking, UpdateBooking } from "@/app/ui/shared/buttons";
 import { fetchFilteredBookings } from "@/app/lib/data";
+import BookingMassageType from "@/app/ui/booking/booking_massage_type";
 
 export default async function BookingTable({
   query,
@@ -91,7 +92,7 @@ export default async function BookingTable({
                     </div>
                   </td>
                   <td className="whitespace-nowrap px-3 py-3">
-                    {booking.massage_type}
+                    <BookingMassageType massage_type={booking.massage_type} />
                   </td>
                   <td className="whitespace-nowrap px-3 py-3 text-center">
                     {booking.duration}

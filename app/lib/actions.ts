@@ -81,7 +81,7 @@ export async function createBooking(prevState: State, formData: FormData) {
     };
   }
   const { type, duration, date } = validatedFields.data;
-  const statusDefault = "completed";
+  const statusDefault = "booked";
   const isSocialDefault = true;
   const userIdDefault = "410544b2-4001-4271-9855-fec4b6a6442a";
   const uuid = crypto.randomUUID();
