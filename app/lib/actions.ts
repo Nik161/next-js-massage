@@ -23,6 +23,7 @@ const FormSchema = z.object({
   //   message: "Please select an booking status.",
   // }),
   date: z.string(),
+  time: z.string(),
 });
 
 const UpdateBooking = FormSchema.omit({ id: true });
@@ -37,6 +38,7 @@ export async function updateBooking(
     type: formData.get("massage_type"),
     duration: formData.get("booking_duration"),
     date: formData.get("booking_date"),
+    time: formData.get("booking_time"),
   });
 
   if (!validatedFields.success) {
@@ -45,12 +47,12 @@ export async function updateBooking(
       message: "Missing Fields. Failed to Update Invoice.",
     };
   }
-  const { type, duration, date } = validatedFields.data;
-
+  const { type, duration, date, time } = validatedFields.data;
+  const dateTime = new Date(`${date}T${time}+00:00`);
   try {
     await sql`
     UPDATE bookings
-    SET massage_type = ${type}, duration = ${duration}, date = ${date}
+    SET massage_type = ${type}, duration = ${duration}, date = ${dateTime}
     WHERE id = ${id}
   `;
   } catch (error) {
@@ -72,6 +74,7 @@ export async function createBooking(prevState: State, formData: FormData) {
     type: formData.get("massage_type"),
     duration: formData.get("booking_duration"),
     date: formData.get("booking_date"),
+    time: formData.get("booking_time"),
   });
 
   if (!validatedFields.success) {
@@ -80,7 +83,9 @@ export async function createBooking(prevState: State, formData: FormData) {
       message: "Missing Fields. Failed to Update Invoice.",
     };
   }
-  const { type, duration, date } = validatedFields.data;
+  const { type, duration, date, time } = validatedFields.data;
+
+  const dateTime = `${date} ${time}`;
   const statusDefault = "booked";
   const isSocialDefault = true;
   const userIdDefault = "410544b2-4001-4271-9855-fec4b6a6442a";
@@ -88,7 +93,7 @@ export async function createBooking(prevState: State, formData: FormData) {
   try {
     await sql`
       INSERT INTO bookings (id,massage_type, duration, status, date, is_social, user_id )
-      VALUES (${uuid}, ${type}, ${duration}, ${statusDefault}, ${date}, ${isSocialDefault}, ${userIdDefault} )
+      VALUES (${uuid}, ${type}, ${duration}, ${statusDefault}, ${dateTime}, ${isSocialDefault}, ${userIdDefault} )
     `;
   } catch (error) {
     console.error(error);

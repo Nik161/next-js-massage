@@ -11,7 +11,7 @@ export default async function BookingTable({
   currentPage: number;
 }) {
   const bookings = await fetchFilteredBookings(query, currentPage);
-  console.log("bookings", bookings);
+  console.log("bookings", JSON.parse(JSON.stringify(bookings)));
 
   return (
     <div className="mt-6 flow-root">
@@ -49,7 +49,10 @@ export default async function BookingTable({
                   </div>
                   <div className="flex justify-end gap-2">
                     <UpdateBooking id={booking.id} />
-                    <DeleteBooking id={booking.id} />
+                    <DeleteBooking
+                      id={booking.id}
+                      disabled={booking.status === "completed"}
+                    />
                   </div>
                 </div>
               </div>
@@ -106,7 +109,10 @@ export default async function BookingTable({
                   <td className="whitespace-nowrap py-3 pl-6 pr-3">
                     <div className="flex justify-end gap-3">
                       <UpdateBooking id={booking.id} />
-                      <DeleteBooking id={booking.id} />
+                      <DeleteBooking
+                        id={booking.id}
+                        disabled={booking.status === "completed"}
+                      />
                     </div>
                   </td>
                 </tr>

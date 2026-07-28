@@ -27,13 +27,20 @@ export function UpdateBooking({ id }: { id: string }) {
   );
 }
 
-export function DeleteBooking({ id }: { id: string }) {
+export function DeleteBooking({
+  id,
+  disabled,
+}: {
+  id: string;
+  disabled: boolean;
+}) {
   const deleteBookingWithId = deleteBooking.bind(null, id);
   return (
     <ConfirmModal
       action={deleteBookingWithId}
       actionText="удаление бронирования"
       buttonText="Удалить"
+      disabled={disabled}
     />
   );
 

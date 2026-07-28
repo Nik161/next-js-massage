@@ -2,24 +2,30 @@
 
 import { useState } from "react";
 import { TrashIcon } from "@heroicons/react/24/outline";
+import clsx from "clsx";
 
 export default function ConfirmModal({
   action,
   actionText,
   buttonText,
+  disabled,
 }: {
   action: () => Promise<void>;
   actionText: string;
   buttonText: string;
+  disabled: boolean;
 }) {
   const [isOpen, setIsOpen] = useState(false);
-
   return (
     <>
       <button
         type="button"
+        disabled={disabled}
         onClick={() => setIsOpen(true)}
-        className="rounded-md border p-2 hover:bg-gray-100"
+        className={clsx("rounded-md border p-2 hover:bg-gray-100", {
+          "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed opacity-60":
+            disabled,
+        })}
       >
         <span className="sr-only">Delete</span>
         <TrashIcon className="w-5" />

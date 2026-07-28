@@ -9,6 +9,7 @@ import { MASSAGE_DURATIONS } from "@/app/constants/massage_durations";
 import { BookingResponse, State } from "@/app/lib/definitions";
 import { useActionState } from "react";
 import { updateBooking } from "@/app/lib/actions";
+import { MASSAGE_TIME_SLOTS } from "@/app/constants/massage_time_slots";
 
 export default function EditBookingForm({
   booking,
@@ -70,10 +71,35 @@ export default function EditBookingForm({
               className="peer block w-full cursor-pointer rounded-md border border-gray-200 py-2 pl-10 outline-2 placeholder:text-gray-500"
               id="booking_date"
               name="booking_date"
-              type="datetime-local"
-              defaultValue={booking.date}
+              type="date"
+              defaultValue={booking.date.split(" ")[0]}
             />
             <CalendarDaysIcon className="pointer-events-none absolute left-3 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
+          </div>
+        </div>
+        {/*  Time Section   */}
+        <div className="mb-4">
+          <label htmlFor="booking_date" className="mb-2 block font-medium">
+            Выберите время сеанса
+          </label>
+          <div className="relative">
+            <select
+              id="booking_time"
+              name="booking_time"
+              className="peer block w-full cursor-pointer rounded-md border border-gray-200 py-2 pl-10 outline-2 placeholder:text-gray-500"
+              defaultValue="18:00"
+              // aria-describedby="customer-error"
+            >
+              <option value="" disabled>
+                Выберите время
+              </option>
+              {MASSAGE_TIME_SLOTS.map((slot) => (
+                <option key={slot} value={slot}>
+                  {slot}
+                </option>
+              ))}
+            </select>
+            <ListBulletIcon className="pointer-events-none absolute left-3 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
           </div>
         </div>
         {/*Duration section*/}
