@@ -1,4 +1,4 @@
-import MassageName from "@/app/ui/massage_name";
+import MassageName from "@/app/ui/shared/massage_name";
 import { CURRENT_YEAR } from "@/app/constants/current_year";
 import Link from "next/link";
 
@@ -8,7 +8,7 @@ export default function Footer() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-15 pb-15 border-b border-[#c9a84c]/25 mb-10">
         <div>
           <h3 className="font-['Cormorant_Garamond',serif] text-[1.8rem] font-semibold text-[#f5ede0] mb-4">
-            <Link href="/">
+            <Link href="/public">
               <MassageName />
             </Link>
           </h3>

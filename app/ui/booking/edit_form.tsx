@@ -183,7 +183,7 @@ export default function EditBookingForm({
       </div>
       <div className="mt-6 flex justify-end gap-4">
         <Link
-          href="/bookings"
+          href="/app/bookings"
           className="flex h-10 items-center rounded-lg bg-gray-100 px-4 font-medium text-gray-600 transition-colors hover:bg-gray-200"
         >
           Назад

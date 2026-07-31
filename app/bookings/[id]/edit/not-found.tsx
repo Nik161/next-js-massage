@@ -7,7 +7,7 @@ export default function NotFound() {
       <FaceFrownIcon className="w-10 text-gray-400" />
       <h1 className="text-xl">Не смогли найти ваше бронирование.</h1>
       <Link
-        href="/bookings"
+        href="/app/bookings"
         className="mt-4 rounded-md bg-blue-500 px-4 py-2 text-xl text-white transition-colors hover:bg-blue-400"
       >
         Назад к бронированиям

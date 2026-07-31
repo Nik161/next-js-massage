@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import postgres from "postgres";
 import { z, ZodUUID } from "zod";
+import { signIn } from "@/auth";
+import { AuthError } from "next-auth";
 
 const sql = postgres(process.env.POSTGRES_URL!, { ssl: "require" });
 
@@ -42,9 +44,10 @@ export async function updateBooking(
   });
 
   if (!validatedFields.success) {
+    const flattened = z.flattenError(validatedFields.error);
     return {
-      errors: validatedFields.error.flatten().fieldErrors,
-      message: "Missing Fields. Failed to Update Invoice.",
+      errors: flattened.fieldErrors,
+      message: "Missing Fields. Failed to update Booking.",
     };
   }
   const { type, duration, date, time } = validatedFields.data;
@@ -70,7 +73,7 @@ export async function deleteBooking(id: string) {
 }
 
 export async function createBooking(prevState: State, formData: FormData) {
-  const validatedFields = UpdateBooking.safeParse({
+  const validatedFields = CreateBooking.safeParse({
     type: formData.get("massage_type"),
     duration: formData.get("booking_duration"),
     date: formData.get("booking_date"),
@@ -78,9 +81,10 @@ export async function createBooking(prevState: State, formData: FormData) {
   });
 
   if (!validatedFields.success) {
+    const flattened = z.flattenError(validatedFields.error);
     return {
-      errors: validatedFields.error.flatten().fieldErrors,
-      message: "Missing Fields. Failed to Update Invoice.",
+      errors: flattened.fieldErrors,
+      message: "Missing Fields. Failed to create Booking.",
     };
   }
   const { type, duration, date, time } = validatedFields.data;
@@ -102,4 +106,23 @@ export async function createBooking(prevState: State, formData: FormData) {
 
   revalidatePath("/bookings");
   redirect("/bookings");
+}
+
+export async function authenticate(
+  prevState: string | undefined,
+  formData: FormData,
+) {
+  try {
+    await signIn("credentials", formData);
+  } catch (error) {
+    if (error instanceof AuthError) {
+      switch (error.type) {
+        case "CredentialsSignin":
+          return "Invalid credentials.";
+        default:
+          return "Something went wrong.";
+      }
+    }
+    throw error;
+  }
 }

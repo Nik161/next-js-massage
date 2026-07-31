@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import MassageName from "@/app/ui/massage_name";
+import MassageName from "@/app/ui/shared/massage_name";
 import Link from "next/link";
 import { cormorant } from "@/app/ui/fonts";
 
