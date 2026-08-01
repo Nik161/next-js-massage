@@ -89,7 +89,7 @@ export async function createBooking(prevState: State, formData: FormData) {
   }
   const { type, duration, date, time } = validatedFields.data;
 
-  const dateTime = `${date} ${time}`;
+  const dateTime = new Date(`${date}T${time}+00:00`);
   const statusDefault = "booked";
   const isSocialDefault = true;
   const userIdDefault = "410544b2-4001-4271-9855-fec4b6a6442a";

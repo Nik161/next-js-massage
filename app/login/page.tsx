@@ -1,15 +1,10 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import LoginForm from "@/app/ui/login/login_form";
-import bcrypt from "bcryptjs";
 
 export const metadata: Metadata = {
   title: "Login",
 };
-
-async function getHashPassword() {
-  const hashPassword = await bcrypt.hash("28081991", 12);
-}
 
 export default function LoginPage() {
   return (

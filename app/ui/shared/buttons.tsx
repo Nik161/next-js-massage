@@ -19,7 +19,7 @@ export function CreateBooking() {
 export function UpdateBooking({ id }: { id: string }) {
   return (
     <Link
-      href={`/app/bookings/${id}/edit`}
+      href={`/bookings/${id}/edit`}
       className="rounded-md border p-2 hover:bg-gray-100"
     >
       <PencilIcon className="w-5" />
