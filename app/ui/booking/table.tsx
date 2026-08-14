@@ -47,7 +47,10 @@ export default async function BookingTable({
                     <p>{booking.date.toString()}</p>
                   </div>
                   <div className="flex justify-end gap-2">
-                    <UpdateBooking id={booking.id} />
+                    <UpdateBooking
+                      id={booking.id}
+                      disabled={booking.status === "completed"}
+                    />
                     <DeleteBooking
                       id={booking.id}
                       disabled={booking.status === "completed"}
@@ -107,7 +110,10 @@ export default async function BookingTable({
                   </td>
                   <td className="whitespace-nowrap py-3 pl-6 pr-3">
                     <div className="flex justify-end gap-3">
-                      <UpdateBooking id={booking.id} />
+                      <UpdateBooking
+                        id={booking.id}
+                        disabled={booking.status === "completed"}
+                      />
                       <DeleteBooking
                         id={booking.id}
                         disabled={booking.status === "completed"}

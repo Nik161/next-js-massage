@@ -9,20 +9,25 @@ import { State } from "@/app/lib/definitions";
 import { useActionState } from "react";
 import { createBooking } from "@/app/lib/actions";
 import { MASSAGE_TIME_SLOTS } from "@/app/constants/massage_time_slots";
+import { User } from "next-auth";
 
-export default function CreateBookingForm() {
+export default function CreateBookingForm({
+  user,
+}: {
+  user: User | undefined;
+}) {
   const defaultDate = new Date().toISOString().split("T")[0];
   const defaultMassageType = "relax";
   const defaultMassageDuration = 30;
   const initialState: State = { message: null, errors: {} };
   const [state, formAction] = useActionState(createBooking, initialState);
-
+  console.log("user", user);
   return (
     <form className="w-full min-w-full" action={formAction}>
       <div className="rounded-md bg-gray-50 p-4 md:p-6">
         {/* Customer Name */}
         <div className="mb-4">
-          <h1 className="text-2xl">username</h1>
+          <h1 className="text-2xl">{user?.name}</h1>
         </div>{" "}
         {/* Booking type */}
         <div className="mb-4">

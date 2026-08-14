@@ -21,6 +21,9 @@ export default function ConfirmModal({
       <button
         type="button"
         disabled={disabled}
+        title={
+          disabled ? "You can't remove completed booking" : "Remove booking"
+        }
         onClick={() => setIsOpen(true)}
         className={clsx("rounded-md border p-2 hover:bg-gray-100", {
           "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed opacity-60":

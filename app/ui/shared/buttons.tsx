@@ -2,6 +2,7 @@ import { PencilIcon, PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { deleteBooking } from "@/app/lib/actions";
 import ConfirmModal from "@/app/ui/shared/confirmModal";
+import clsx from "clsx";
 
 export function CreateBooking() {
   return (
@@ -16,11 +17,21 @@ export function CreateBooking() {
   );
 }
 
-export function UpdateBooking({ id }: { id: string }) {
+export function UpdateBooking({
+  id,
+  disabled,
+}: {
+  id: string;
+  disabled: boolean;
+}) {
   return (
     <Link
       href={`/bookings/${id}/edit`}
-      className="rounded-md border p-2 hover:bg-gray-100"
+      title={disabled ? "You can't edit completed booking" : "Edit booking"}
+      className={clsx("rounded-md border p-2 hover:bg-gray-100", {
+        "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed opacity-60":
+          disabled,
+      })}
     >
       <PencilIcon className="w-5" />
     </Link>
