@@ -1,0 +1,18 @@
+input,
+textarea,
+select {
+    color: #000;
+    -webkit-text-fill-color: #000;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: #9ca3af;
+    -webkit-text-fill-color: #9ca3af;
+}
+
+select {
+    background-color: #fff;
+    color: #000;
+    -webkit-text-fill-color: #000;
+}

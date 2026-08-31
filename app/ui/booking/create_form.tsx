@@ -21,7 +21,6 @@ export default function CreateBookingForm({
   const defaultMassageDuration = 30;
   const initialState: State = { message: null, errors: {} };
   const [state, formAction] = useActionState(createBooking, initialState);
-  console.log("user", user);
   return (
     <form className="w-full min-w-full" action={formAction}>
       <div className="rounded-md bg-gray-50 p-4 md:p-6">
