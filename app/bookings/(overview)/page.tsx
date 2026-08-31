@@ -4,6 +4,8 @@ import { CreateBooking } from "@/app/ui/shared/buttons";
 import Pagination from "@/app/ui/shared/pagination";
 import BookingTable from "@/app/ui/booking/table";
 import { fetchBookingsPages } from "@/app/lib/data";
+import { auth } from "@/auth";
+import { getUserById } from "@/app/lib/data/users";
 
 export default async function Page(props: {
   searchParams?: Promise<{
@@ -15,6 +17,9 @@ export default async function Page(props: {
   const query = searchParams?.query || "";
   const currentPage = Number(searchParams?.page) || 1;
   const totalPages = await fetchBookingsPages(query);
+  const session = await auth();
+  const userId = session?.user?.id;
+  const user = userId ? await getUserById(userId) : null;
 
   return (
     <div className="min-h-screen">
@@ -28,7 +33,7 @@ export default async function Page(props: {
               <Search placeholder="Искать сеансы..." />
               <CreateBooking />
             </div>
-            <BookingTable query={query} currentPage={currentPage} />
+            <BookingTable query={query} currentPage={currentPage} user={user} />
             <div className="mt-5 flex w-full justify-center">
               <Pagination totalPages={totalPages} />
             </div>

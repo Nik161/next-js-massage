@@ -17,7 +17,11 @@ export async function getUserByEmail(email: string): Promise<User | undefined> {
 
 export async function getUserById(id: string): Promise<User | undefined> {
   const users = await sql<User[]>`
-    SELECT *
+    SELECT
+      id,
+      name,
+      email,
+      role
     FROM users
     WHERE id = ${id}
   `;

@@ -1,6 +1,3 @@
-import { PowerIcon } from "@heroicons/react/24/outline";
-import { signOut } from "@/auth";
-
 export default function HeroBooking() {
   return (
     <section className="relative min-h-80 flex items-center justify-center overflow-hidden">
@@ -24,34 +21,34 @@ export default function HeroBooking() {
         <p className="text-[1rem] font-light opacity-80 leading-relaxed max-w-2xl mx-auto">
           Выберите программу, дату, время и способ оплаты
         </p>
-        <form
-          action={async () => {
-            "use server";
-            await signOut({ redirectTo: "/" });
-          }}
-          className="mt-8"
-        >
-          <button
-            type="submit"
-            className="group relative inline-flex items-center gap-3 px-6 py-3
-                       text-[#f5ede0] border border-[#c9a84c]/30 rounded-full
-                       bg-[#1a2e1e]/40 backdrop-blur-sm
-                       hover:bg-[#c9a84c]/10 hover:border-[#c9a84c]/60
-                       transition-all duration-300 ease-out
-                       hover:shadow-[0_0_20px_rgba(201,168,76,0.15)]"
-          >
-            <PowerIcon
-              className="w-5 h-5 text-[#c9a84c]/70 group-hover:text-[#c9a84c]
-                                    transition-colors duration-300"
-            />
-            <span
-              className="text-sm tracking-wider uppercase font-light
-                             group-hover:text-[#c9a84c] transition-colors duration-300"
-            >
-              Выйти
-            </span>
-          </button>
-        </form>
+        {/*<form*/}
+        {/*  action={async () => {*/}
+        {/*    "use server";*/}
+        {/*    await signOut({ redirectTo: "/" });*/}
+        {/*  }}*/}
+        {/*  className="mt-8"*/}
+        {/*>*/}
+        {/*  <button*/}
+        {/*    type="submit"*/}
+        {/*    className="group relative inline-flex items-center gap-3 px-6 py-3*/}
+        {/*               text-[#f5ede0] border border-[#c9a84c]/30 rounded-full*/}
+        {/*               bg-[#1a2e1e]/40 backdrop-blur-sm*/}
+        {/*               hover:bg-[#c9a84c]/10 hover:border-[#c9a84c]/60*/}
+        {/*               transition-all duration-300 ease-out*/}
+        {/*               hover:shadow-[0_0_20px_rgba(201,168,76,0.15)]"*/}
+        {/*  >*/}
+        {/*    <PowerIcon*/}
+        {/*      className="w-5 h-5 text-[#c9a84c]/70 group-hover:text-[#c9a84c]*/}
+        {/*                            transition-colors duration-300"*/}
+        {/*    />*/}
+        {/*    <span*/}
+        {/*      className="text-sm tracking-wider uppercase font-light*/}
+        {/*                     group-hover:text-[#c9a84c] transition-colors duration-300"*/}
+        {/*    >*/}
+        {/*      Выйти*/}
+        {/*    </span>*/}
+        {/*  </button>*/}
+        {/*</form>*/}
       </div>
     </section>
   );

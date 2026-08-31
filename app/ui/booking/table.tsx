@@ -2,16 +2,20 @@ import BookingStatus from "@/app/ui/booking/booking_status";
 import { DeleteBooking, UpdateBooking } from "@/app/ui/shared/buttons";
 import { fetchFilteredBookings } from "@/app/lib/data";
 import BookingMassageType from "@/app/ui/booking/booking_massage_type";
+import { User } from "@/app/lib/definitions";
+import ConfirmBookingButton from "@/app/ui/shared/confirmBookingButton";
+import CompleteBookingButton from "@/app/ui/shared/completeBookingButton";
 
 export default async function BookingTable({
   query,
   currentPage,
+  user,
 }: {
   query: string;
   currentPage: number;
+  user: User | null | undefined;
 }) {
   const bookings = await fetchFilteredBookings(query, currentPage);
-
   return (
     <div className="mt-6 flow-root">
       <div className="inline-block min-w-full align-middle">
@@ -49,11 +53,15 @@ export default async function BookingTable({
                   <div className="flex justify-end gap-2">
                     <UpdateBooking
                       id={booking.id}
-                      disabled={booking.status === "completed"}
+                      disabled={
+                        booking.status === "completed" && user?.role !== "admin"
+                      }
                     />
                     <DeleteBooking
                       id={booking.id}
-                      disabled={booking.status === "completed"}
+                      disabled={
+                        booking.status === "completed" && user?.role !== "admin"
+                      }
                     />
                   </div>
                 </div>
@@ -110,13 +118,27 @@ export default async function BookingTable({
                   </td>
                   <td className="whitespace-nowrap py-3 pl-6 pr-3">
                     <div className="flex justify-end gap-3">
+                      {booking.status === "booked" &&
+                        user?.role === "admin" && (
+                          <ConfirmBookingButton bookingId={booking.id} />
+                        )}
+                      {booking.status === "confirmed" &&
+                        user?.role === "admin" && (
+                          <CompleteBookingButton bookingId={booking.id} />
+                        )}
                       <UpdateBooking
                         id={booking.id}
-                        disabled={booking.status === "completed"}
+                        disabled={
+                          booking.status === "completed" &&
+                          user?.role !== "admin"
+                        }
                       />
                       <DeleteBooking
                         id={booking.id}
-                        disabled={booking.status === "completed"}
+                        disabled={
+                          booking.status === "completed" &&
+                          user?.role !== "admin"
+                        }
                       />
                     </div>
                   </td>

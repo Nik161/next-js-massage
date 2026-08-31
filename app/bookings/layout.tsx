@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Header from "@/app/ui/header/header";
 import HeroBooking from "@/app/ui/booking/hero";
-import { cormorant } from "@/app/ui/fonts";
 
 export const metadata: Metadata = {
   title: "Niko Massage",

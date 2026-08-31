@@ -5,8 +5,9 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import postgres from "postgres";
 import { z, ZodUUID } from "zod";
-import { signIn } from "@/auth";
+import { auth, signIn } from "@/auth";
 import { AuthError } from "next-auth";
+import { getUserById } from "@/app/lib/data/users";
 
 const sql = postgres(process.env.POSTGRES_URL!, { ssl: "require" });
 
@@ -106,6 +107,25 @@ export async function createBooking(prevState: State, formData: FormData) {
 
   revalidatePath("/bookings");
   redirect("/bookings");
+}
+
+export async function setBookingStatus(
+  id: string,
+  status: "confirmed" | "completed",
+) {
+  const session = await auth();
+  const userId = session?.user?.id;
+  const user = userId ? await getUserById(userId) : null;
+  if (!user || user.role !== "admin") {
+    throw new Error("Unauthorized");
+  }
+
+  await sql`
+    UPDATE bookings
+    SET status = ${status}
+    WHERE id = ${id}
+`;
+  revalidatePath("/bookings");
 }
 
 export async function authenticate(
