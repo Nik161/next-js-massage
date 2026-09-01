@@ -1,18 +1,18 @@
-input,
-textarea,
-select {
-    color: #000;
-    -webkit-text-fill-color: #000;
-}
+@layer base {
+    input, textarea, select {
+        /* Удаляет стандартное внутреннее затенение и серый градиент в iOS Safari */
+        -webkit-appearance: none;
+        appearance: none;
 
-input::placeholder,
-textarea::placeholder {
-    color: #9ca3af;
-    -webkit-text-fill-color: #9ca3af;
-}
+        /* Фиксирует прозрачность текста, которую iOS режет по умолчанию */
+        -webkit-text-fill-color: currentcolor;
+        opacity: 1;
+    }
 
-select {
-    background-color: #fff;
-    color: #000;
-    -webkit-text-fill-color: #000;
+    /* Исправление для заблокированных полей, которые на мобильных сливаются с фоном */
+    input:disabled, textarea:disabled {
+        -webkit-text-fill-color: #1a1a1a !important; /* Принудительный темный цвет */
+        color: #1a1a1a !important;
+        opacity: 1 !important;
+    }
 }

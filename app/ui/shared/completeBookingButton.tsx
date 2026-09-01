@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { setBookingStatus } from "@/app/lib/actions";
+import { CheckIcon } from "@heroicons/react/24/outline";
 
 type ConfirmBookingButtonProps = {
   bookingId: string;
@@ -23,12 +24,13 @@ export default function CompleteBookingButton({
       type="button"
       onClick={handleConfirm}
       disabled={isPending}
+      title="Завершить"
       className="
         rounded-md
         border border-green-600
         px-4 py-2
         text-sm
-        font-medium
+        font-mediumьрев
         text-green-700
         transition-colors
         hover:bg-green-600
@@ -37,7 +39,7 @@ export default function CompleteBookingButton({
         disabled:opacity-50
       "
     >
-      {isPending ? "Загрузка..." : "Завершить"}
+      <CheckIcon className="w-5" />
     </button>
   );
 }

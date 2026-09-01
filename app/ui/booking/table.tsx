@@ -51,6 +51,13 @@ export default async function BookingTable({
                     <p>{booking.date.toString()}</p>
                   </div>
                   <div className="flex justify-end gap-2">
+                    {booking.status === "booked" && user?.role === "admin" && (
+                      <ConfirmBookingButton bookingId={booking.id} />
+                    )}
+                    {booking.status === "confirmed" &&
+                      user?.role === "admin" && (
+                        <CompleteBookingButton bookingId={booking.id} />
+                      )}
                     <UpdateBooking
                       id={booking.id}
                       disabled={
