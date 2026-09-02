@@ -4,12 +4,38 @@ import { State } from "@/app/lib/definitions";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import postgres from "postgres";
-import { z, ZodUUID } from "zod";
+import { z } from "zod";
 import { auth, signIn } from "@/auth";
 import { AuthError } from "next-auth";
 import { getUserById } from "@/app/lib/data/users";
+import { Resend } from "resend";
 
 const sql = postgres(process.env.POSTGRES_URL!, { ssl: "require" });
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+export async function sendBookingCreatedEmail(booking: {
+  type: string;
+  duration: number;
+  date: string;
+  time: string;
+}) {
+  return resend.emails.send({
+    from: "onboarding@resend.dev",
+    to: process.env.ADMIN_EMAIL!,
+    subject: "Новая запись на массаж",
+    html: `
+      <h1>Новая запись</h1>
+
+      <p><strong>Дата:</strong> ${booking.date}</p>
+      <p><strong>Массаж:</strong> ${booking.type}</p>
+      <p><strong>Продолжительность:</strong> ${booking.duration} мин.</p>
+      <p><strong>Время:</strong> ${booking.time}</p>
+      <p><strong>Подтрведить на сайте  
+      <a href="https://luxury-massage-pjg88gxpl-nikolaivoronkov-7533s-projects.vercel.app/" target="_blank"></a>
+      </strong></p>
+    `,
+  });
+}
 
 const FormSchema = z.object({
   id: z.string(),
@@ -90,21 +116,34 @@ export async function createBooking(prevState: State, formData: FormData) {
   }
   const { type, duration, date, time } = validatedFields.data;
 
+  const userIdDefault = "410544b2-4001-4271-9855-fec4b6a6442a";
+  const session = await auth();
+  const userId = session?.user?.id ? session?.user?.id : userIdDefault;
+
   const dateTime = new Date(`${date}T${time}+00:00`);
   const statusDefault = "booked";
   const isSocialDefault = true;
-  const userIdDefault = "410544b2-4001-4271-9855-fec4b6a6442a";
   const uuid = crypto.randomUUID();
   try {
     await sql`
       INSERT INTO bookings (id,massage_type, duration, status, date, is_social, user_id )
-      VALUES (${uuid}, ${type}, ${duration}, ${statusDefault}, ${dateTime}, ${isSocialDefault}, ${userIdDefault} )
+      VALUES (${uuid}, ${type}, ${duration}, ${statusDefault}, ${dateTime}, ${isSocialDefault}, ${userId} )
     `;
   } catch (error) {
     console.error(error);
     return { message: "Database Error: Failed to Create Invoice.", errors: {} };
   }
 
+  try {
+    await sendBookingCreatedEmail({
+      date: date,
+      time: time,
+      duration: duration,
+      type: type,
+    });
+  } catch (error) {
+    console.error("Failed to send booking email:", error);
+  }
   revalidatePath("/bookings");
   redirect("/bookings");
 }
