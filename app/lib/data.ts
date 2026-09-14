@@ -21,11 +21,17 @@ export async function fetchFilteredBookings(
         bookings.user_id,
         bookings.status,
         bookings.is_social,
+        bookings.therapist_id,
+        
         users.name as user_name,
         users.email,
-        users.image_url
+        users.image_url,
+      
+        therapists.name AS therapist_name
+      
         FROM bookings
         JOIN users ON bookings.user_id = users.id
+        LEFT JOIN therapists ON bookings.therapist_id = therapists.id
       WHERE
         users.name ILIKE ${`%${query}%`} OR
         users.email ILIKE ${`%${query}%`} OR

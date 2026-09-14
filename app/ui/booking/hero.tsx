@@ -19,7 +19,7 @@ export default function HeroBooking() {
           Забронировать <em className="italic text-[#c9a84c]">сеанс</em>
         </h1>
         <p className="text-[1rem] font-light opacity-80 leading-relaxed max-w-2xl mx-auto">
-          Выберите программу, дату, время и способ оплаты
+          Выберите массажиста, программу, дату и время
         </p>
         {/*<form*/}
         {/*  action={async () => {*/}

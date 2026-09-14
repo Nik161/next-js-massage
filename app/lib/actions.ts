@@ -30,8 +30,8 @@ export async function sendBookingCreatedEmail(booking: {
       <p><strong>Массаж:</strong> ${booking.type}</p>
       <p><strong>Продолжительность:</strong> ${booking.duration} мин.</p>
       <p><strong>Время:</strong> ${booking.time}</p>
-      <p><strong>Подтрведить на сайте  
-      <a href="https://luxury-massage-pjg88gxpl-nikolaivoronkov-7533s-projects.vercel.app/" target="_blank"></a>
+      <p><strong>
+      <a href="https://luxury-massage-pjg88gxpl-nikolaivoronkov-7533s-projects.vercel.app/" target="_blank">Подтрведить на сайте</a>
       </strong></p>
     `,
   });
@@ -49,10 +49,11 @@ const FormSchema = z.object({
     .positive({ message: "Duration must be positive." })
     .int({ message: "Duration must be a whole number." }),
   // status: z.enum(["booked", "confirmed", "canceled", "completed"], {
-  //   message: "Please select an booking status.",
+  //   message: "Please select a booking status.",
   // }),
   date: z.string(),
   time: z.string(),
+  therapist_id: z.string(),
 });
 
 const UpdateBooking = FormSchema.omit({ id: true });
@@ -105,7 +106,10 @@ export async function createBooking(prevState: State, formData: FormData) {
     duration: formData.get("booking_duration"),
     date: formData.get("booking_date"),
     time: formData.get("booking_time"),
+    therapist_id: formData.get("therapist_id"),
   });
+  console.log("formdata", formData);
+  console.log("validated fiels", validatedFields);
 
   if (!validatedFields.success) {
     const flattened = z.flattenError(validatedFields.error);
@@ -114,11 +118,12 @@ export async function createBooking(prevState: State, formData: FormData) {
       message: "Missing Fields. Failed to create Booking.",
     };
   }
-  const { type, duration, date, time } = validatedFields.data;
+  const { type, duration, date, time, therapist_id } = validatedFields.data;
 
-  const userIdDefault = "410544b2-4001-4271-9855-fec4b6a6442a";
   const session = await auth();
-  const userId = session?.user?.id ? session?.user?.id : userIdDefault;
+  const userId = session?.user?.id;
+
+  if (!userId) throw new Error("No user id found");
 
   const dateTime = new Date(`${date}T${time}+00:00`);
   const statusDefault = "booked";
@@ -126,8 +131,8 @@ export async function createBooking(prevState: State, formData: FormData) {
   const uuid = crypto.randomUUID();
   try {
     await sql`
-      INSERT INTO bookings (id,massage_type, duration, status, date, is_social, user_id )
-      VALUES (${uuid}, ${type}, ${duration}, ${statusDefault}, ${dateTime}, ${isSocialDefault}, ${userId} )
+      INSERT INTO bookings (id,massage_type, duration, status, date, is_social, user_id, therapist_id )
+      VALUES (${uuid}, ${type}, ${duration}, ${statusDefault}, ${dateTime}, ${isSocialDefault}, ${userId}, ${therapist_id} )
     `;
   } catch (error) {
     console.error(error);

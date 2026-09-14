@@ -13,10 +13,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className="w-full h-screen md:flex-row md:overflow-hidden">
+    <div className="min-h-screen w-full">
       <Header />
       <HeroBooking />
-      <div className={`min-h-full flex flex-col `}>{children}</div>
+
+      <main className="w-full">{children}</main>
     </div>
   );
 }

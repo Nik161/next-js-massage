@@ -45,7 +45,7 @@ export default async function BookingTable({
                 </div>
                 <div className="flex w-full items-center justify-between pt-4">
                   <div>
-                    <p className="text-xl font-medium">
+                    <p className="text-lg font-medium">
                       {booking.duration} минут
                     </p>
                     <p>{booking.date.toString()}</p>
@@ -78,16 +78,16 @@ export default async function BookingTable({
 
           {/* BIG SCREEN VIEW*/}
           <table className="hidden min-w-full text-gray-900 md:table text-xl">
-            <thead className="rounded-lg text-left text-sm font-normal">
-              <tr className="text-2xl">
+            <thead className="rounded-lg text-left font-normal">
+              <tr className="text-lg">
                 <th scope="col" className="px-4 py-5 font-medium sm:pl-6">
                   Клиент
                 </th>
-                <th scope="col" className="px-3 py-5 font-medium">
-                  Тип
+                <th scope="col" className="px-4 py-5 font-medium sm:pl-6">
+                  Массажист
                 </th>
                 <th scope="col" className="px-3 py-5 font-medium">
-                  Продолжительность
+                  Тип
                 </th>
                 <th scope="col" className="px-3 py-5 font-medium">
                   Дата/Время
@@ -104,19 +104,25 @@ export default async function BookingTable({
               {bookings?.map((booking) => (
                 <tr
                   key={booking.id}
-                  className="w-full text-xl border-b py-3 last-of-type:border-none [&:first-child>td:first-child]:rounded-tl-lg [&:first-child>td:last-child]:rounded-tr-lg [&:last-child>td:first-child]:rounded-bl-lg [&:last-child>td:last-child]:rounded-br-lg"
+                  className="w-full text-lg border-b py-3 last-of-type:border-none [&:first-child>td:first-child]:rounded-tl-lg [&:first-child>td:last-child]:rounded-tr-lg [&:last-child>td:first-child]:rounded-bl-lg [&:last-child>td:last-child]:rounded-br-lg"
                 >
                   <td className="whitespace-nowrap py-3 pl-6 pr-3">
                     <div className="flex items-center gap-3">
                       <p>{booking.user_name}</p>
                     </div>
                   </td>
+                  <td className="whitespace-nowrap py-3 pl-6 pr-3">
+                    <div className="flex items-center gap-3">
+                      <p>{booking.therapist_name}</p>
+                    </div>
+                  </td>
                   <td className="whitespace-nowrap px-3 py-3">
                     <BookingMassageType massage_type={booking.massage_type} />
+                    <div> {booking.duration} минут</div>
                   </td>
-                  <td className="whitespace-nowrap px-3 py-3 text-center">
-                    {booking.duration}
-                  </td>
+                  {/*<td className="whitespace-nowrap px-3 py-3 text-center">*/}
+                  {/*  {booking.duration}*/}
+                  {/*</td>*/}
                   <td className="whitespace-nowrap px-3 py-3">
                     {booking.date}
                   </td>
