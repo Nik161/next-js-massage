@@ -13,7 +13,7 @@ import { Resend } from "resend";
 const sql = postgres(process.env.POSTGRES_URL!, { ssl: "require" });
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-export async function sendBookingCreatedEmail(booking: {
+export async function sendBookingEmailToTherapist(booking: {
   type: string;
   duration: number;
   date: string;
@@ -24,15 +24,7 @@ export async function sendBookingCreatedEmail(booking: {
     to: process.env.ADMIN_EMAIL!,
     subject: "Новая запись на массаж",
     html: `
-      <h1>Новая запись</h1>
-
-      <p><strong>Дата:</strong> ${booking.date}</p>
-      <p><strong>Массаж:</strong> ${booking.type}</p>
-      <p><strong>Продолжительность:</strong> ${booking.duration} мин.</p>
-      <p><strong>Время:</strong> ${booking.time}</p>
-      <p><strong>
-      <a href="https://luxury-massage-pjg88gxpl-nikolaivoronkov-7533s-projects.vercel.app/" target="_blank">Подтрведить на сайте</a>
-      </strong></p>
+     <div style="margin:0; padding:40px 20px; background:#f5f5f4; font-family:Arial,Helvetica,sans-serif; color:#171717;"> <div style="max-width:600px; margin:0 auto;"> <!-- Header --> <div style="text-align:center; margin-bottom:24px;"> <div style="font-size:28px; font-weight:600; letter-spacing:0.5px;"> Niko Massage </div> <div style="margin-top:8px; font-size:14px; color:#737373;"> Новая запись на массаж </div> </div> <!-- Main card --> <div style="background:#ffffff; border-radius:20px; padding:32px; box-shadow:0 4px 20px rgba(0,0,0,0.06);"> <div style="text-align:center; margin-bottom:28px;"> <div style="font-size:13px; color:#737373; text-transform:uppercase; letter-spacing:1px;"> Новая запись </div> <div style="margin-top:10px; font-size:28px; font-weight:600;"> ${booking.date} </div> <div style="margin-top:6px; font-size:18px; color:#525252;"> ${booking.time} </div> </div> <!-- Details --> <div style="border-top:1px solid #e5e5e5; border-bottom:1px solid #e5e5e5; padding:20px 0;"> <div style="padding:10px 0;"> <div style="font-size:12px; color:#a3a3a3; text-transform:uppercase; letter-spacing:0.8px;"> Массаж </div> <div style="margin-top:4px; font-size:16px; font-weight:500;"> ${booking.type} </div> </div> <div style="padding:10px 0;"> <div style="font-size:12px; color:#a3a3a3; text-transform:uppercase; letter-spacing:0.8px;"> Продолжительность </div> <div style="margin-top:4px; font-size:16px; font-weight:500;"> ${booking.duration} мин. </div> </div> </div> <!-- Action --> <div style="text-align:center; margin-top:28px;"> <div style="margin-bottom:16px; font-size:14px; line-height:1.5; color:#737373;"> Проверьте данные записи и подтвердите её на сайте. </div> <a href="https://luxury-massage-pjg88gxpl-nikolaivoronkov-7533s-projects.vercel.app/" target="_blank" style=" display:inline-block; padding:14px 28px; border-radius:12px; background:#171717; color:#ffffff; font-size:15px; font-weight:600; text-decoration:none; " > Подтвердить запись </a> </div> </div> <!-- Footer --> <div style="padding:24px 10px; text-align:center; font-size:12px; line-height:1.5; color:#a3a3a3;"> Это автоматическое уведомление от Niko Massage.<br /> Пожалуйста, не отвечайте на это письмо. </div> </div> </div>
     `,
   });
 }
@@ -69,6 +61,7 @@ export async function updateBooking(
     duration: formData.get("booking_duration"),
     date: formData.get("booking_date"),
     time: formData.get("booking_time"),
+    therapist_id: formData.get("therapist_id"),
   });
 
   if (!validatedFields.success) {
@@ -78,17 +71,31 @@ export async function updateBooking(
       message: "Missing Fields. Failed to update Booking.",
     };
   }
-  const { type, duration, date, time } = validatedFields.data;
+  const { type, duration, date, time, therapist_id } = validatedFields.data;
+  const session = await auth();
+  const userId = session?.user?.id;
+  if (!userId) throw new Error("No user id found");
   const dateTime = new Date(`${date}T${time}+00:00`);
   try {
     await sql`
     UPDATE bookings
-    SET massage_type = ${type}, duration = ${duration}, date = ${dateTime}
+    SET massage_type = ${type}, duration = ${duration}, date = ${dateTime}, therapist_id = ${therapist_id} 
     WHERE id = ${id}
   `;
   } catch (error) {
     console.error(error);
     return { message: "Database Error: Failed to Update Invoice.", errors: {} };
+  }
+
+  try {
+    await sendBookingEmailToTherapist({
+      date: date,
+      time: time,
+      duration: duration,
+      type: type,
+    });
+  } catch (error) {
+    console.error("Failed to send booking(update) email:", error);
   }
 
   revalidatePath("/bookings");
@@ -108,8 +115,6 @@ export async function createBooking(prevState: State, formData: FormData) {
     time: formData.get("booking_time"),
     therapist_id: formData.get("therapist_id"),
   });
-  console.log("formdata", formData);
-  console.log("validated fiels", validatedFields);
 
   if (!validatedFields.success) {
     const flattened = z.flattenError(validatedFields.error);
@@ -140,14 +145,14 @@ export async function createBooking(prevState: State, formData: FormData) {
   }
 
   try {
-    await sendBookingCreatedEmail({
+    await sendBookingEmailToTherapist({
       date: date,
       time: time,
       duration: duration,
       type: type,
     });
   } catch (error) {
-    console.error("Failed to send booking email:", error);
+    console.error("Failed to send booking(create) email:", error);
   }
   revalidatePath("/bookings");
   redirect("/bookings");

@@ -87,7 +87,7 @@ export default function EditBookingForm({
               id="booking_time"
               name="booking_time"
               className="peer block w-full cursor-pointer rounded-md border border-gray-200 py-2 pl-10 outline-2 placeholder:text-gray-500"
-              defaultValue="18:00"
+              defaultValue={booking.date.split(" ")[1]}
               // aria-describedby="customer-error"
             >
               <option value="" disabled>

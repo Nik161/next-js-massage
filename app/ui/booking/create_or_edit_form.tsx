@@ -4,12 +4,13 @@ import { AVAILABLE_MASSAGE_SLOTS } from "@/app/constants/available_massage_slots
 import Link from "next/link";
 import { useActionState, useMemo, useState } from "react";
 import { User } from "next-auth";
-import { State } from "@/app/lib/definitions";
-import { createBooking } from "@/app/lib/actions";
-import BookingProgress from "@/app/bookings/create/booking_progress";
-import BookingSelectTherapist from "@/app/bookings/create/booking_select_therapist";
-import BookingSelectDateAndTime from "@/app/bookings/create/booking_select_date_time";
-import BookingSelectProgramm from "@/app/bookings/create/booking_select_programm";
+import { BookingResponse, State } from "@/app/lib/definitions";
+import { createBooking, updateBooking } from "@/app/lib/actions";
+import BookingProgress from "@/app/ui/booking/booking_progress";
+import BookingSelectTherapist from "@/app/ui/booking/booking_select_therapist";
+import BookingSelectDateAndTime from "@/app/ui/booking/booking_select_date_time";
+import BookingSelectProgramm from "@/app/ui/booking/booking_select_programm";
+import { create } from "node:domain";
 
 function getToday() {
   const date = new Date();
@@ -37,25 +38,42 @@ function isTimeInPast(time: string) {
   return slotDate <= now;
 }
 
-export default function CreateBookingForm({
+export default function CreateOrEditBookingForm({
   user,
+  booking,
 }: {
   user: User | undefined;
+  booking: BookingResponse | undefined;
 }) {
-  const today = getToday();
+  const initialBookingData = {
+    therapist: booking ? booking.therapist_id : "",
+    date: booking ? booking.date.split(" ")[0] : getToday(),
+    time: booking ? booking.date.split(" ")[1] : "",
+    massage: booking ? booking.massage_type : "",
+    duration: booking ? booking.duration : 0,
+  };
+
   const [step, setStep] = useState(1);
-  const [selectedTherapist, setSelectedTherapist] = useState("");
-  const [selectedDate, setSelectedDate] = useState(today);
-  const [selectedTime, setSelectedTime] = useState("");
-  const [selectedMassage, setSelectedMassage] = useState("");
-  const [selectedDuration, setSelectedDuration] = useState("");
+  const [selectedDate, setSelectedDate] = useState(initialBookingData.date);
+  const [selectedTherapist, setSelectedTherapist] = useState(
+    initialBookingData.therapist,
+  );
+  const [selectedTime, setSelectedTime] = useState(initialBookingData.time);
+  const [selectedMassage, setSelectedMassage] = useState(
+    initialBookingData.massage,
+  );
+  const [selectedDuration, setSelectedDuration] = useState(
+    initialBookingData.duration,
+  );
 
   const initialState: State = {
     message: null,
     errors: {},
   };
 
-  const [state, formAction] = useActionState(createBooking, initialState);
+  const action = booking ? updateBooking.bind(null, booking.id) : createBooking;
+
+  const [state, formAction] = useActionState(action, initialState);
 
   // Получаем слоты выбранного массажиста
   const therapistSlots = useMemo(() => {
@@ -123,7 +141,7 @@ export default function CreateBookingForm({
             setSelectedTime={setSelectedTime}
             setSelectedDate={setSelectedDate}
             setStep={setStep}
-            today={today}
+            today={getToday()}
             maxDate={maxDate}
             availableSlots={availableSlots}
             canGoToProgram={canGoToProgram}
@@ -143,6 +161,7 @@ export default function CreateBookingForm({
             selectedTherapist={selectedTherapist}
             selectedTime={selectedTime}
             selectedDate={selectedDate}
+            buttonText={booking ? "Обновить" : "Записаться"}
           />
         )}
       </div>

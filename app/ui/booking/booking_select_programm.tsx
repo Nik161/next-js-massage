@@ -12,16 +12,18 @@ export default function BookingSelectProgramm({
   setStep,
   selectedDate,
   canSubmit,
+  buttonText,
 }: {
   selectedMassage: string;
   setSelectedMassage: (value: string) => void;
-  selectedDuration: string;
-  setSelectedDuration: (value: string) => void;
+  selectedDuration: number;
+  setSelectedDuration: (value: number) => void;
   selectedTherapist: string;
   selectedDate: string;
   selectedTime: string;
   setStep: (value: number) => void;
   canSubmit: boolean;
+  buttonText: string;
 }) {
   return (
     <section>
@@ -67,7 +69,7 @@ export default function BookingSelectProgramm({
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {MASSAGE_DURATIONS.map((duration) => {
-            const value = String(duration);
+            const value = duration;
 
             const isSelected = selectedDuration === value;
 
@@ -111,7 +113,7 @@ export default function BookingSelectProgramm({
         </button>
 
         <Button type="submit" disabled={!canSubmit}>
-          Записаться
+          {buttonText}
         </Button>
       </div>
     </section>
