@@ -28,3 +28,9 @@ export type User = {
   password: string;
   role: "user" | "admin";
 };
+
+export type MassageType = {
+  id: string;
+  name: string;
+  description: string;
+};

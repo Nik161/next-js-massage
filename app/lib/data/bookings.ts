@@ -1,5 +1,5 @@
 import postgres from "postgres";
-import { BookingResponse, State } from "@/app/lib/definitions";
+import { BookingResponse } from "@/app/lib/definitions";
 
 const sql = postgres(process.env.POSTGRES_URL!, { ssl: "require" });
 

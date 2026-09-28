@@ -1,10 +1,11 @@
-import { MASSAGE_TYPES } from "@/app/constants/massage_types";
+import { getMassageTypes } from "@/app/lib/data/massage_types";
 
-export default function BookingMassageType({
+export default async function BookingMassageType({
   massage_type,
 }: {
   massage_type: string;
 }) {
-  const massageType = MASSAGE_TYPES.find((type) => type.id === massage_type);
+  const massageTypes = await getMassageTypes();
+  const massageType = massageTypes.find((type) => type.id === massage_type);
   return <span>{massageType ? massageType.name : null}</span>;
 }

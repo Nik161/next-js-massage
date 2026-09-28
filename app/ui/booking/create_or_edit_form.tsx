@@ -4,13 +4,12 @@ import { AVAILABLE_MASSAGE_SLOTS } from "@/app/constants/available_massage_slots
 import Link from "next/link";
 import { useActionState, useMemo, useState } from "react";
 import { User } from "next-auth";
-import { BookingResponse, State } from "@/app/lib/definitions";
+import { BookingResponse, MassageType, State } from "@/app/lib/definitions";
 import { createBooking, updateBooking } from "@/app/lib/actions";
 import BookingProgress from "@/app/ui/booking/booking_progress";
 import BookingSelectTherapist from "@/app/ui/booking/booking_select_therapist";
 import BookingSelectDateAndTime from "@/app/ui/booking/booking_select_date_time";
 import BookingSelectProgramm from "@/app/ui/booking/booking_select_programm";
-import { create } from "node:domain";
 
 function getToday() {
   const date = new Date();
@@ -41,9 +40,11 @@ function isTimeInPast(time: string) {
 export default function CreateOrEditBookingForm({
   user,
   booking,
+  massageTypes,
 }: {
   user: User | undefined;
   booking: BookingResponse | undefined;
+  massageTypes: MassageType[];
 }) {
   const initialBookingData = {
     therapist: booking ? booking.therapist_id : "",
@@ -161,6 +162,7 @@ export default function CreateOrEditBookingForm({
             selectedTherapist={selectedTherapist}
             selectedTime={selectedTime}
             selectedDate={selectedDate}
+            massageTypes={massageTypes}
             buttonText={booking ? "Обновить" : "Записаться"}
           />
         )}

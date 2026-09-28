@@ -1,157 +1,232 @@
 import BookingStatus from "@/app/ui/booking/booking_status";
 import { DeleteBooking, UpdateBooking } from "@/app/ui/shared/buttons";
-import { fetchFilteredBookings } from "@/app/lib/data";
-import BookingMassageType from "@/app/ui/booking/booking_massage_type";
-import { User } from "@/app/lib/definitions";
+import { fetchFilteredBookings } from "@/app/lib/data/bookings";
 import ConfirmBookingButton from "@/app/ui/shared/confirmBookingButton";
 import CompleteBookingButton from "@/app/ui/shared/completeBookingButton";
+import { auth } from "@/auth";
+import { getUserById } from "@/app/lib/data/users";
+import { BookingResponse } from "@/app/lib/definitions";
+import BookingMassageType from "@/app/ui/booking/booking_massage_type";
 
 export default async function BookingTable({
   query,
   currentPage,
-  user,
 }: {
   query: string;
   currentPage: number;
-  user: User | null | undefined;
 }) {
+  const session = await auth();
+  const userId = session?.user?.id;
+  const user = userId ? await getUserById(userId) : null;
   const bookings = await fetchFilteredBookings(query, currentPage);
+
+  function canEditBooking(booking: BookingResponse): boolean {
+    if (user?.role === "admin") {
+      return true;
+    }
+    if (booking.status === "completed") return false;
+    return false;
+  }
+
   return (
-    <div className="mt-6 flow-root">
+    <div className="mt-8 flow-root">
       <div className="inline-block min-w-full align-middle">
-        <div className="rounded-lg bg-gray-50 p-2 md:pt-0">
-          {/* MOBILE VIEW*/}
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-gray-50 shadow-sm">
+          {/* MOBILE VIEW */}
           <div className="md:hidden">
             {bookings?.map((booking) => (
               <div
                 key={booking.id}
-                className="mb-2 w-full rounded-md bg-white p-4"
+                className="border-b border-gray-200 bg-white p-5 last:border-b-0"
               >
-                <div className="flex items-center justify-between border-b pb-4">
-                  <div>
-                    <div className="mb-2 flex items-center">
-                      {/*<Image*/}
-                      {/*  src={bookings.image_url}*/}
-                      {/*  className="mr-2 rounded-full"*/}
-                      {/*  width={28}*/}
-                      {/*  height={28}*/}
-                      {/*  alt={`${bookings.name}'s profile picture`}*/}
-                      {/*/>*/}
-                      <p>{booking.user_name}</p>
-                    </div>
-                    {/*<p className="text-sm text-gray-500">{booking.email}</p>*/}
+                {/* Client + status */}
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="truncate text-lg font-medium text-gray-900">
+                      {booking.user_name}
+                    </p>
+
+                    <p className="mt-1 text-sm text-gray-500">
+                      {booking.therapist_name}
+                    </p>
                   </div>
-                  <BookingStatus status={booking.status} />
+
+                  <div className="shrink-0">
+                    <BookingStatus status={booking.status} />
+                  </div>
                 </div>
-                <div className="flex w-full items-center justify-between pt-4">
+
+                {/* Booking information */}
+                <div className="mt-5 grid grid-cols-2 gap-4 border-t border-gray-100 pt-4">
                   <div>
-                    <p className="text-lg font-medium">
+                    <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                      Массаж
+                    </p>
+
+                    <div className="mt-1">
+                      <BookingMassageType
+                        massage_type={booking.massage_type}
+                        key={booking.massage_type}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                      Продолжительность
+                    </p>
+
+                    <p className="mt-1 text-base font-medium text-gray-900">
                       {booking.duration} минут
                     </p>
-                    <p>{booking.date.toString()}</p>
                   </div>
-                  <div className="flex justify-end gap-2">
-                    {booking.status === "booked" && user?.role === "admin" && (
-                      <ConfirmBookingButton bookingId={booking.id} />
-                    )}
-                    {booking.status === "confirmed" &&
-                      user?.role === "admin" && (
-                        <CompleteBookingButton bookingId={booking.id} />
-                      )}
-                    <UpdateBooking
-                      id={booking.id}
-                      disabled={
-                        booking.status === "completed" && user?.role !== "admin"
-                      }
-                    />
-                    <DeleteBooking
-                      id={booking.id}
-                      disabled={
-                        booking.status === "completed" && user?.role !== "admin"
-                      }
-                    />
+
+                  <div className="col-span-2">
+                    <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                      Дата и время
+                    </p>
+
+                    <p className="mt-1 text-base font-medium text-gray-900">
+                      {booking.date.toString()}
+                    </p>
                   </div>
+                </div>
+
+                {/* Actions */}
+                <div className="mt-5 flex justify-end gap-2 border-t border-gray-100 pt-4">
+                  {booking.status === "booked" && user?.role === "admin" && (
+                    <ConfirmBookingButton bookingId={booking.id} />
+                  )}
+
+                  {booking.status === "confirmed" && user?.role === "admin" && (
+                    <CompleteBookingButton bookingId={booking.id} />
+                  )}
+
+                  <UpdateBooking
+                    id={booking.id}
+                    disabled={!canEditBooking(booking)}
+                  />
+
+                  <DeleteBooking
+                    id={booking.id}
+                    disabled={!canEditBooking(booking)}
+                  />
                 </div>
               </div>
             ))}
           </div>
 
-          {/* BIG SCREEN VIEW*/}
-          <table className="hidden min-w-full text-gray-900 md:table text-xl">
-            <thead className="rounded-lg text-left font-normal">
-              <tr className="text-lg">
-                <th scope="col" className="px-4 py-5 font-medium sm:pl-6">
+          {/* DESKTOP VIEW */}
+          <table className="hidden min-w-full text-gray-900 md:table">
+            <thead>
+              <tr className="border-b border-gray-200 bg-gray-50 text-left">
+                <th
+                  scope="col"
+                  className="px-6 py-5 text-sm font-medium uppercase tracking-wide text-gray-500"
+                >
                   Клиент
                 </th>
-                <th scope="col" className="px-4 py-5 font-medium sm:pl-6">
+
+                <th
+                  scope="col"
+                  className="px-6 py-5 text-sm font-medium uppercase tracking-wide text-gray-500"
+                >
                   Массажист
                 </th>
-                <th scope="col" className="px-3 py-5 font-medium">
+
+                <th
+                  scope="col"
+                  className="px-4 py-5 text-sm font-medium uppercase tracking-wide text-gray-500"
+                >
                   Тип
                 </th>
-                <th scope="col" className="px-3 py-5 font-medium">
-                  Дата/Время
+
+                <th
+                  scope="col"
+                  className="px-4 py-5 text-sm font-medium uppercase tracking-wide text-gray-500"
+                >
+                  Дата / Время
                 </th>
-                <th scope="col" className="px-3 py-5 font-medium">
+
+                <th
+                  scope="col"
+                  className="px-4 py-5 text-sm font-medium uppercase tracking-wide text-gray-500"
+                >
                   Статус
                 </th>
-                <th scope="col" className="relative py-3 pl-6 pr-3">
-                  <span className="sr-only">Редактировать</span>
+
+                <th scope="col" className="relative py-5 pl-4 pr-6">
+                  <span className="sr-only">Действия</span>
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white">
+
+            <tbody className="divide-y divide-gray-100 bg-white">
               {bookings?.map((booking) => (
                 <tr
                   key={booking.id}
-                  className="w-full text-lg border-b py-3 last-of-type:border-none [&:first-child>td:first-child]:rounded-tl-lg [&:first-child>td:last-child]:rounded-tr-lg [&:last-child>td:first-child]:rounded-bl-lg [&:last-child>td:last-child]:rounded-br-lg"
+                  className="group transition-colors hover:bg-gray-50/70"
                 >
-                  <td className="whitespace-nowrap py-3 pl-6 pr-3">
-                    <div className="flex items-center gap-3">
-                      <p>{booking.user_name}</p>
+                  {/* Client */}
+                  <td className="whitespace-nowrap px-6 py-5">
+                    <p className="text-base font-medium text-gray-900">
+                      {booking.user_name}
+                    </p>
+                  </td>
+
+                  {/* Therapist */}
+                  <td className="whitespace-nowrap px-6 py-5">
+                    <p className="text-base text-gray-700">
+                      {booking.therapist_name}
+                    </p>
+                  </td>
+
+                  {/* Massage */}
+                  <td className="whitespace-nowrap px-4 py-5">
+                    <div className="flex flex-col gap-1">
+                      <BookingMassageType
+                        massage_type={booking.massage_type}
+                        key={booking.massage_type}
+                      />
+                      <span className="text-sm text-gray-500">
+                        {booking.duration} минут
+                      </span>
                     </div>
                   </td>
-                  <td className="whitespace-nowrap py-3 pl-6 pr-3">
-                    <div className="flex items-center gap-3">
-                      <p>{booking.therapist_name}</p>
-                    </div>
+
+                  {/* Date */}
+                  <td className="whitespace-nowrap px-4 py-5">
+                    <span className="text-base font-medium text-gray-900">
+                      {booking.date}
+                    </span>
                   </td>
-                  <td className="whitespace-nowrap px-3 py-3">
-                    <BookingMassageType massage_type={booking.massage_type} />
-                    <div> {booking.duration} минут</div>
-                  </td>
-                  {/*<td className="whitespace-nowrap px-3 py-3 text-center">*/}
-                  {/*  {booking.duration}*/}
-                  {/*</td>*/}
-                  <td className="whitespace-nowrap px-3 py-3">
-                    {booking.date}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-3">
+
+                  {/* Status */}
+                  <td className="whitespace-nowrap px-4 py-5">
                     <BookingStatus status={booking.status} />
                   </td>
-                  <td className="whitespace-nowrap py-3 pl-6 pr-3">
-                    <div className="flex justify-end gap-3">
+
+                  {/* Actions */}
+                  <td className="whitespace-nowrap py-5 pl-4 pr-6">
+                    <div className="flex justify-end gap-2 opacity-80 transition-opacity group-hover:opacity-100">
                       {booking.status === "booked" &&
                         user?.role === "admin" && (
                           <ConfirmBookingButton bookingId={booking.id} />
                         )}
+
                       {booking.status === "confirmed" &&
                         user?.role === "admin" && (
                           <CompleteBookingButton bookingId={booking.id} />
                         )}
+
                       <UpdateBooking
                         id={booking.id}
-                        disabled={
-                          booking.status === "completed" &&
-                          user?.role !== "admin"
-                        }
+                        disabled={!canEditBooking(booking)}
                       />
+
                       <DeleteBooking
                         id={booking.id}
-                        disabled={
-                          booking.status === "completed" &&
-                          user?.role !== "admin"
-                        }
+                        disabled={!canEditBooking(booking)}
                       />
                     </div>
                   </td>

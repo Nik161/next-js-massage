@@ -3,9 +3,8 @@ import Search from "@/app/ui/shared/search";
 import { CreateBooking } from "@/app/ui/shared/buttons";
 import Pagination from "@/app/ui/shared/pagination";
 import BookingTable from "@/app/ui/booking/table";
-import { fetchBookingsPages } from "@/app/lib/data";
-import { auth } from "@/auth";
-import { getUserById } from "@/app/lib/data/users";
+import { fetchBookingsPages } from "@/app/lib/data/bookings";
+import { getMassageTypes } from "@/app/lib/data/massage_types";
 
 export default async function Page(props: {
   searchParams?: Promise<{
@@ -17,23 +16,20 @@ export default async function Page(props: {
   const query = searchParams?.query || "";
   const currentPage = Number(searchParams?.page) || 1;
   const totalPages = await fetchBookingsPages(query);
-  const session = await auth();
-  const userId = session?.user?.id;
-  const user = userId ? await getUserById(userId) : null;
 
   return (
     <div className="min-h-screen">
       <main>
         <div className="flex flex-col justify-center items-center">
           <div className="min-w-3/4">
-            <h1 className={`${cormorant.className} m-4 text-xl md:text-2xl`}>
+            <h1 className={`${cormorant.className} m-4 text-xl  md:text-3xl`}>
               Ваши массажи
             </h1>
             <div className="flex items-center justify-between gap-2 md:mt-8">
               <Search placeholder="Искать сеансы..." />
               <CreateBooking />
             </div>
-            <BookingTable query={query} currentPage={currentPage} user={user} />
+            <BookingTable query={query} currentPage={currentPage} />
             <div className="mt-5 flex w-full justify-center">
               <Pagination totalPages={totalPages} />
             </div>

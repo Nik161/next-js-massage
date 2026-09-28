@@ -1,6 +1,6 @@
 import { Button } from "@/app/ui/shared/button";
-import { MASSAGE_TYPES } from "@/app/constants/massage_types";
 import { MASSAGE_DURATIONS } from "@/app/constants/massage_durations";
+import { MassageType } from "@/app/lib/definitions";
 
 export default function BookingSelectProgramm({
   selectedMassage,
@@ -13,6 +13,7 @@ export default function BookingSelectProgramm({
   selectedDate,
   canSubmit,
   buttonText,
+  massageTypes,
 }: {
   selectedMassage: string;
   setSelectedMassage: (value: string) => void;
@@ -24,6 +25,7 @@ export default function BookingSelectProgramm({
   setStep: (value: number) => void;
   canSubmit: boolean;
   buttonText: string;
+  massageTypes: MassageType[];
 }) {
   return (
     <section>
@@ -39,7 +41,7 @@ export default function BookingSelectProgramm({
         <p className="mb-3 text-sm font-medium text-gray-900">Программа</p>
 
         <div className="grid gap-3">
-          {MASSAGE_TYPES.map((massage) => {
+          {massageTypes.map((massage) => {
             const isSelected = selectedMassage === massage.id;
 
             return (
