@@ -1,174 +1,149 @@
 "use client";
 
-import { AVAILABLE_MASSAGE_SLOTS } from "@/app/constants/available_massage_slots";
 import Link from "next/link";
-import { useActionState, useMemo, useState } from "react";
-import { User } from "next-auth";
-import { BookingResponse, MassageType, State } from "@/app/lib/definitions";
+import { useActionState, useState } from "react";
+import type {
+  BookingFormState,
+  BookingResponse,
+  MassageType,
+  Therapist,
+} from "@/app/lib/definitions";
 import { createBooking, updateBooking } from "@/app/lib/actions";
+import { getToday } from "@/app/lib/booking_time";
 import BookingProgress from "@/app/ui/booking/booking_progress";
 import BookingSelectTherapist from "@/app/ui/booking/booking_select_therapist";
 import BookingSelectDateAndTime from "@/app/ui/booking/booking_select_date_time";
 import BookingSelectProgramm from "@/app/ui/booking/booking_select_programm";
+import { useAvailableSlots } from "@/app/ui/booking/use_available_slots";
 
-function getToday() {
-  const date = new Date();
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
+type BookingSelection = {
+  therapistId: string;
+  date: string;
+  time: string;
+  massageType: string;
+  duration: number;
+};
 
-const maxDate = (() => {
-  const date = new Date();
-  date.setDate(date.getDate() + 14);
-  return date.toISOString().split("T")[0];
-})();
+const initialState: BookingFormState = { message: null, errors: {} };
 
-function isToday(date: string) {
-  return date === getToday();
-}
+function getInitialSelection(booking?: BookingResponse): BookingSelection {
+  if (!booking) {
+    return {
+      therapistId: "",
+      date: getToday(),
+      time: "",
+      massageType: "",
+      duration: 0,
+    };
+  }
 
-function isTimeInPast(time: string) {
-  const now = new Date();
-  const [hours, minutes] = time.split(":").map(Number);
-  const slotDate = new Date();
-  slotDate.setHours(hours, minutes, 0, 0);
-  return slotDate <= now;
+  const [date, time] = booking.date.split(" ");
+  return {
+    therapistId: booking.therapist_id,
+    date,
+    time,
+    massageType: booking.massage_type,
+    duration: booking.duration,
+  };
 }
 
 export default function CreateOrEditBookingForm({
-  user,
+  userName,
   booking,
+  therapists,
   massageTypes,
 }: {
-  user: User | undefined;
-  booking: BookingResponse | undefined;
+  userName: string;
+  booking?: BookingResponse;
+  therapists: Therapist[];
   massageTypes: MassageType[];
 }) {
-  const initialBookingData = {
-    therapist: booking ? booking.therapist_id : "",
-    date: booking ? booking.date.split(" ")[0] : getToday(),
-    time: booking ? booking.date.split(" ")[1] : "",
-    massage: booking ? booking.massage_type : "",
-    duration: booking ? booking.duration : 0,
-  };
-
   const [step, setStep] = useState(1);
-  const [selectedDate, setSelectedDate] = useState(initialBookingData.date);
-  const [selectedTherapist, setSelectedTherapist] = useState(
-    initialBookingData.therapist,
+  const [selection, setSelection] = useState(() =>
+    getInitialSelection(booking),
   );
-  const [selectedTime, setSelectedTime] = useState(initialBookingData.time);
-  const [selectedMassage, setSelectedMassage] = useState(
-    initialBookingData.massage,
-  );
-  const [selectedDuration, setSelectedDuration] = useState(
-    initialBookingData.duration,
-  );
-
-  const initialState: State = {
-    message: null,
-    errors: {},
-  };
 
   const action = booking ? updateBooking.bind(null, booking.id) : createBooking;
+  const [state, formAction, isPending] = useActionState(action, initialState);
 
-  const [state, formAction] = useActionState(action, initialState);
+  const updateSelection = (patch: Partial<BookingSelection>) =>
+    setSelection((prev) => ({ ...prev, ...patch }));
 
-  // Получаем слоты выбранного массажиста
-  const therapistSlots = useMemo(() => {
-    if (!selectedTherapist) {
-      return [];
-    }
-
-    return (
-      AVAILABLE_MASSAGE_SLOTS[
-        selectedTherapist as keyof typeof AVAILABLE_MASSAGE_SLOTS
-      ] ?? []
-    );
-  }, [selectedTherapist]);
-
-  // Если сегодня — убираем прошедшие слоты
-  const availableSlots = useMemo(() => {
-    if (!isToday(selectedDate)) {
-      return therapistSlots;
-    }
-
-    return therapistSlots.filter((slot) => !isTimeInPast(slot));
-  }, [selectedDate, therapistSlots]);
-
-  const canGoToTime = Boolean(selectedTherapist);
-
-  const canGoToProgram = Boolean(
-    selectedTherapist && selectedDate && selectedTime,
-  );
+  const { slots, isLoading, isError } = useAvailableSlots({
+    therapistId: selection.therapistId,
+    date: selection.date,
+    duration: selection.duration,
+    excludeBookingId: booking?.id,
+  });
 
   const canSubmit = Boolean(
-    selectedTherapist &&
-    selectedDate &&
-    selectedTime &&
-    selectedMassage &&
-    selectedDuration,
+    selection.therapistId &&
+    selection.date &&
+    selection.time &&
+    selection.massageType &&
+    selection.duration,
   );
 
   return (
-    <form action={formAction} className="w-full h-full">
-      <div className="rounded-2xl bg-white p-5 shadow-sm md:p-8">
-        <BookingProgress
-          step={step}
-          setStep={setStep}
-          name={user?.name || user?.email || ""}
-        />
+    <form action={formAction} className="h-full w-full">
+      {/* Values submitted to the server action */}
+      <input type="hidden" name="therapist_id" value={selection.therapistId} />
+      <input type="hidden" name="booking_date" value={selection.date} />
+      <input type="hidden" name="booking_time" value={selection.time} />
+      <input type="hidden" name="massage_type" value={selection.massageType} />
+      <input type="hidden" name="booking_duration" value={selection.duration} />
 
-        {/* STEP 1 — MASSAGE THERAPIST */}
+      <div className="rounded-2xl bg-white p-5 shadow-sm md:p-8">
+        <BookingProgress step={step} setStep={setStep} name={userName} />
 
         {step === 1 && (
           <BookingSelectTherapist
-            setStep={setStep}
-            selectedTherapist={selectedTherapist}
-            setSelectedTherapist={setSelectedTherapist}
-            setSelectedTime={setSelectedTime}
-            canGoToTime={canGoToTime}
+            therapists={therapists}
+            selectedTherapist={selection.therapistId}
+            // Free slots depend on the therapist, so the chosen time is reset.
+            onSelect={(therapistId) =>
+              updateSelection({ therapistId, time: "" })
+            }
+            onNext={() => setStep(2)}
           />
         )}
-
-        {/* STEP 2 — DATE AND TIME */}
 
         {step === 2 && (
-          <BookingSelectDateAndTime
-            selectedTime={selectedTime}
-            selectedDate={selectedDate}
-            setSelectedTime={setSelectedTime}
-            setSelectedDate={setSelectedDate}
-            setStep={setStep}
-            today={getToday()}
-            maxDate={maxDate}
-            availableSlots={availableSlots}
-            canGoToProgram={canGoToProgram}
+          <BookingSelectProgramm
+            massageTypes={massageTypes}
+            selectedMassage={selection.massageType}
+            selectedDuration={selection.duration}
+            onMassageChange={(massageType) => updateSelection({ massageType })}
+            // A longer session may not fit into the chosen time.
+            onDurationChange={(duration) =>
+              updateSelection({ duration, time: "" })
+            }
+            onBack={() => setStep(1)}
+            onNext={() => setStep(3)}
           />
         )}
-
-        {/* STEP 3 — PROGRAM */}
 
         {step === 3 && (
-          <BookingSelectProgramm
-            setStep={setStep}
-            setSelectedDuration={setSelectedDuration}
-            setSelectedMassage={setSelectedMassage}
-            canSubmit={canSubmit}
-            selectedMassage={selectedMassage}
-            selectedDuration={selectedDuration}
-            selectedTherapist={selectedTherapist}
-            selectedTime={selectedTime}
-            selectedDate={selectedDate}
-            massageTypes={massageTypes}
-            buttonText={booking ? "Обновить" : "Записаться"}
+          <BookingSelectDateAndTime
+            selectedDate={selection.date}
+            selectedTime={selection.time}
+            slots={slots}
+            isLoading={isLoading}
+            isError={isError}
+            onDateChange={(date) => updateSelection({ date, time: "" })}
+            onTimeChange={(time) => updateSelection({ time })}
+            onBack={() => setStep(2)}
+            canSubmit={canSubmit && !isPending}
+            submitText={booking ? "Обновить" : "Записаться"}
           />
         )}
-      </div>
 
-      {/* Back */}
+        {state.message && (
+          <p aria-live="polite" className="mt-4 text-sm text-red-500">
+            {state.message}
+          </p>
+        )}
+      </div>
 
       <div className="mt-6 mb-6">
         <Link
@@ -178,11 +153,6 @@ export default function CreateOrEditBookingForm({
           ← Вернуться к бронированиям
         </Link>
       </div>
-
-      {/*Errors shown here*/}
-      {/*{state.message && (*/}
-      {/*  <p className="mt-4 text-sm text-red-500">{state.message}</p>*/}
-      {/*)}*/}
     </form>
   );
 }

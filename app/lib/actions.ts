@@ -1,180 +1,217 @@
 "use server";
 
-import { State } from "@/app/lib/definitions";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import postgres from "postgres";
 import { z } from "zod";
-import { auth, signIn } from "@/auth";
 import { AuthError } from "next-auth";
-import { getUserById } from "@/app/lib/data/users";
-import { Resend } from "resend";
+import { signIn } from "@/auth";
+import { sql } from "@/app/lib/db";
+import { getCurrentUser, requireUserId } from "@/app/lib/session";
+import { canEditBooking, isAdmin } from "@/app/lib/permissions";
+import { isSlotAvailable } from "@/app/lib/data/availability";
+import { toBookingDateTime } from "@/app/lib/booking_time";
+import { MASSAGE_DURATIONS } from "@/app/constants/massage_durations";
+import {
+  type BookingEmailData,
+  sendBookingEmailToTherapist,
+} from "@/app/lib/email/booking_email";
+import type {
+  BookingFormState,
+  ManualBookingStatus,
+} from "@/app/lib/definitions";
 
-const sql = postgres(process.env.POSTGRES_URL!, { ssl: "require" });
-const resend = new Resend(process.env.RESEND_API_KEY);
+const BOOKINGS_PATH = "/bookings";
 
-export async function sendBookingEmailToTherapist(booking: {
-  type: string;
-  duration: number;
-  date: string;
-  time: string;
-}) {
-  return resend.emails.send({
-    from: "onboarding@resend.dev",
-    to: process.env.ADMIN_EMAIL!,
-    subject: "Новая запись на массаж",
-    html: `
-     <div style="margin:0; padding:40px 20px; background:#f5f5f4; font-family:Arial,Helvetica,sans-serif; color:#171717;"> <div style="max-width:600px; margin:0 auto;"> <!-- Header --> <div style="text-align:center; margin-bottom:24px;"> <div style="font-size:28px; font-weight:600; letter-spacing:0.5px;"> Niko Massage </div> <div style="margin-top:8px; font-size:14px; color:#737373;"> Новая запись на массаж </div> </div> <!-- Main card --> <div style="background:#ffffff; border-radius:20px; padding:32px; box-shadow:0 4px 20px rgba(0,0,0,0.06);"> <div style="text-align:center; margin-bottom:28px;"> <div style="font-size:13px; color:#737373; text-transform:uppercase; letter-spacing:1px;"> Новая запись </div> <div style="margin-top:10px; font-size:28px; font-weight:600;"> ${booking.date} </div> <div style="margin-top:6px; font-size:18px; color:#525252;"> ${booking.time} </div> </div> <!-- Details --> <div style="border-top:1px solid #e5e5e5; border-bottom:1px solid #e5e5e5; padding:20px 0;"> <div style="padding:10px 0;"> <div style="font-size:12px; color:#a3a3a3; text-transform:uppercase; letter-spacing:0.8px;"> Массаж </div> <div style="margin-top:4px; font-size:16px; font-weight:500;"> ${booking.type} </div> </div> <div style="padding:10px 0;"> <div style="font-size:12px; color:#a3a3a3; text-transform:uppercase; letter-spacing:0.8px;"> Продолжительность </div> <div style="margin-top:4px; font-size:16px; font-weight:500;"> ${booking.duration} мин. </div> </div> </div> <!-- Action --> <div style="text-align:center; margin-top:28px;"> <div style="margin-bottom:16px; font-size:14px; line-height:1.5; color:#737373;"> Проверьте данные записи и подтвердите её на сайте. </div> <a href="https://luxury-massage.vercel.app/" target="_blank" style=" display:inline-block; padding:14px 28px; border-radius:12px; background:#171717; color:#ffffff; font-size:15px; font-weight:600; text-decoration:none; " > Подтвердить запись </a> </div> </div> <!-- Footer --> <div style="padding:24px 10px; text-align:center; font-size:12px; line-height:1.5; color:#a3a3a3;"> Это автоматическое уведомление от Niko Massage.<br /> Пожалуйста, не отвечайте на это письмо. </div> </div> </div>
-    `,
-  });
-}
+const SLOT_TAKEN_MESSAGE = "Это время уже занято, выберите другое.";
 
-const FormSchema = z.object({
-  id: z.string(),
-  type: z.string({
-    message: "Please select a massage type.",
-  }),
+// Postgres error code for a violated exclusion constraint (bookings_no_overlap)
+const EXCLUSION_VIOLATION = "23P01";
+
+const BookingFormSchema = z.object({
+  type: z
+    .string({ message: "Please select a massage type." })
+    .min(1, { message: "Please select a massage type." }),
   duration: z.coerce
-    .number({
-      message: "Please enter a valid number.", // Используйте message вместо invalid_type_error
-    })
-    .positive({ message: "Duration must be positive." })
-    .int({ message: "Duration must be a whole number." }),
-  // status: z.enum(["booked", "confirmed", "canceled", "completed"], {
-  //   message: "Please select a booking status.",
-  // }),
-  date: z.string(),
-  time: z.string(),
-  therapist_id: z.string(),
+    .number({ message: "Please enter a valid number." })
+    .refine((value) => MASSAGE_DURATIONS.includes(value), {
+      message: "Please select a valid duration.",
+    }),
+  date: z.iso.date({ message: "Please select a date." }),
+  time: z
+    .string({ message: "Please select a time." })
+    .regex(/^\d{2}:\d{2}$/, { message: "Please select a time." }),
+  therapist_id: z.uuid({ message: "Please select a therapist." }),
 });
 
-const UpdateBooking = FormSchema.omit({ id: true });
-const CreateBooking = FormSchema.omit({ id: true });
+type BookingFormData = z.infer<typeof BookingFormSchema>;
 
-export async function updateBooking(
-  id: string,
-  prevState: State,
+function parseBookingForm(formData: FormData) {
+  return BookingFormSchema.safeParse({
+    type: formData.get("massage_type"),
+    duration: formData.get("booking_duration"),
+    date: formData.get("booking_date"),
+    time: formData.get("booking_time"),
+    therapist_id: formData.get("therapist_id"),
+  });
+}
+
+function getBookingInterval({ date, time, duration }: BookingFormData) {
+  const startsAt = toBookingDateTime(date, time);
+  const endsAt = new Date(startsAt.getTime() + duration * 60_000);
+  return { startsAt, endsAt };
+}
+
+// Friendly early check; the bookings_no_overlap constraint is the real guarantee.
+function checkSlot(booking: BookingFormData, excludeBookingId?: string) {
+  return isSlotAvailable({
+    therapistId: booking.therapist_id,
+    date: booking.date,
+    time: booking.time,
+    duration: booking.duration,
+    excludeBookingId,
+  });
+}
+
+function isSlotTakenError(error: unknown) {
+  return (
+    error instanceof postgres.PostgresError &&
+    error.code === EXCLUSION_VIOLATION
+  );
+}
+
+async function requireBookingEditor() {
+  const user = await getCurrentUser();
+  if (!canEditBooking(user)) throw new Error("Unauthorized");
+}
+
+// The email is a nice-to-have: a failure must not break the booking itself.
+async function notifyTherapist(booking: BookingEmailData) {
+  try {
+    await sendBookingEmailToTherapist(booking);
+  } catch (error) {
+    console.error("Failed to send booking email:", error);
+  }
+}
+
+function returnToBookings(): never {
+  revalidatePath(BOOKINGS_PATH);
+  redirect(BOOKINGS_PATH);
+}
+
+export async function createBooking(
+  prevState: BookingFormState,
   formData: FormData,
-) {
-  const validatedFields = UpdateBooking.safeParse({
-    type: formData.get("massage_type"),
-    duration: formData.get("booking_duration"),
-    date: formData.get("booking_date"),
-    time: formData.get("booking_time"),
-    therapist_id: formData.get("therapist_id"),
-  });
+): Promise<BookingFormState> {
+  const userId = await requireUserId();
 
+  const validatedFields = parseBookingForm(formData);
   if (!validatedFields.success) {
-    const flattened = z.flattenError(validatedFields.error);
     return {
-      errors: flattened.fieldErrors,
-      message: "Missing Fields. Failed to update Booking.",
-    };
-  }
-  const { type, duration, date, time, therapist_id } = validatedFields.data;
-  const session = await auth();
-  const userId = session?.user?.id;
-  if (!userId) throw new Error("No user id found");
-  const dateTime = new Date(`${date}T${time}+00:00`);
-  try {
-    await sql`
-    UPDATE bookings
-    SET massage_type = ${type}, duration = ${duration}, date = ${dateTime}, therapist_id = ${therapist_id} 
-    WHERE id = ${id}
-  `;
-  } catch (error) {
-    console.error(error);
-    return { message: "Database Error: Failed to Update Invoice.", errors: {} };
-  }
-
-  try {
-    await sendBookingEmailToTherapist({
-      date: date,
-      time: time,
-      duration: duration,
-      type: type,
-    });
-  } catch (error) {
-    console.error("Failed to send booking(update) email:", error);
-  }
-
-  revalidatePath("/bookings");
-  redirect("/bookings");
-}
-
-export async function deleteBooking(id: string) {
-  await sql`DELETE FROM bookings WHERE id = ${id}`;
-  revalidatePath("/bookings");
-}
-
-export async function createBooking(prevState: State, formData: FormData) {
-  const validatedFields = CreateBooking.safeParse({
-    type: formData.get("massage_type"),
-    duration: formData.get("booking_duration"),
-    date: formData.get("booking_date"),
-    time: formData.get("booking_time"),
-    therapist_id: formData.get("therapist_id"),
-  });
-
-  if (!validatedFields.success) {
-    const flattened = z.flattenError(validatedFields.error);
-    return {
-      errors: flattened.fieldErrors,
+      errors: z.flattenError(validatedFields.error).fieldErrors,
       message: "Missing Fields. Failed to create Booking.",
     };
   }
-  const { type, duration, date, time, therapist_id } = validatedFields.data;
 
-  const session = await auth();
-  const userId = session?.user?.id;
+  const booking = validatedFields.data;
+  if (!(await checkSlot(booking))) {
+    return { message: SLOT_TAKEN_MESSAGE, errors: {} };
+  }
 
-  if (!userId) throw new Error("No user id found");
+  const { startsAt, endsAt } = getBookingInterval(booking);
 
-  const dateTime = new Date(`${date}T${time}+00:00`);
-  const statusDefault = "booked";
-  const isSocialDefault = true;
-  const uuid = crypto.randomUUID();
   try {
     await sql`
-      INSERT INTO bookings (id,massage_type, duration, status, date, is_social, user_id, therapist_id )
-      VALUES (${uuid}, ${type}, ${duration}, ${statusDefault}, ${dateTime}, ${isSocialDefault}, ${userId}, ${therapist_id} )
+      INSERT INTO bookings (id, massage_type, duration, status, date, ends_at, is_social, user_id, therapist_id)
+      VALUES (
+        ${crypto.randomUUID()},
+        ${booking.type},
+        ${booking.duration},
+        ${"booked"},
+        ${startsAt},
+        ${endsAt},
+        ${true},
+        ${userId},
+        ${booking.therapist_id}
+      )
     `;
   } catch (error) {
+    if (isSlotTakenError(error)) {
+      return { message: SLOT_TAKEN_MESSAGE, errors: {} };
+    }
     console.error(error);
-    return { message: "Database Error: Failed to Create Invoice.", errors: {} };
+    return { message: "Database Error: Failed to Create Booking.", errors: {} };
   }
 
-  try {
-    await sendBookingEmailToTherapist({
-      date: date,
-      time: time,
-      duration: duration,
-      type: type,
-    });
-  } catch (error) {
-    console.error("Failed to send booking(create) email:", error);
+  await notifyTherapist(booking);
+  returnToBookings();
+}
+
+export async function updateBooking(
+  id: string,
+  prevState: BookingFormState,
+  formData: FormData,
+): Promise<BookingFormState> {
+  await requireBookingEditor();
+
+  const validatedFields = parseBookingForm(formData);
+  if (!validatedFields.success) {
+    return {
+      errors: z.flattenError(validatedFields.error).fieldErrors,
+      message: "Missing Fields. Failed to update Booking.",
+    };
   }
-  revalidatePath("/bookings");
-  redirect("/bookings");
+
+  const booking = validatedFields.data;
+  if (!(await checkSlot(booking, id))) {
+    return { message: SLOT_TAKEN_MESSAGE, errors: {} };
+  }
+
+  const { startsAt, endsAt } = getBookingInterval(booking);
+
+  try {
+    await sql`
+      UPDATE bookings
+      SET
+        massage_type = ${booking.type},
+        duration = ${booking.duration},
+        date = ${startsAt},
+        ends_at = ${endsAt},
+        therapist_id = ${booking.therapist_id}
+      WHERE id = ${id}
+    `;
+  } catch (error) {
+    if (isSlotTakenError(error)) {
+      return { message: SLOT_TAKEN_MESSAGE, errors: {} };
+    }
+    console.error(error);
+    return { message: "Database Error: Failed to Update Booking.", errors: {} };
+  }
+
+  await notifyTherapist(booking);
+  returnToBookings();
+}
+
+export async function deleteBooking(id: string) {
+  await requireBookingEditor();
+
+  await sql`DELETE FROM bookings WHERE id = ${id}`;
+  revalidatePath(BOOKINGS_PATH);
 }
 
 export async function setBookingStatus(
   id: string,
-  status: "confirmed" | "completed",
+  status: ManualBookingStatus,
 ) {
-  const session = await auth();
-  const userId = session?.user?.id;
-  const user = userId ? await getUserById(userId) : null;
-  if (!user || user.role !== "admin") {
-    throw new Error("Unauthorized");
-  }
+  const user = await getCurrentUser();
+  if (!isAdmin(user)) throw new Error("Unauthorized");
 
   await sql`
     UPDATE bookings
     SET status = ${status}
     WHERE id = ${id}
-`;
-  revalidatePath("/bookings");
+  `;
+  revalidatePath(BOOKINGS_PATH);
 }
 
 export async function authenticate(

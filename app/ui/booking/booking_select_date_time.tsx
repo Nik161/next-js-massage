@@ -1,25 +1,38 @@
-import clsx from "clsx";
+import { getMaxBookingDate, getToday } from "@/app/lib/booking_time";
+import { Button } from "@/app/ui/shared/button";
+import SelectableButton from "@/app/ui/booking/selectable_button";
+import { BackButton } from "@/app/ui/booking/step_navigation";
+
+function SlotsMessage({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="rounded-xl bg-gray-50 p-4 text-lg text-gray-500">
+      {children}
+    </p>
+  );
+}
 
 export default function BookingSelectDateAndTime({
-  setStep,
   selectedDate,
-  today,
-  setSelectedDate,
-  setSelectedTime,
-  canGoToProgram,
-  availableSlots,
   selectedTime,
-  maxDate,
+  slots,
+  isLoading,
+  isError,
+  onDateChange,
+  onTimeChange,
+  onBack,
+  canSubmit,
+  submitText,
 }: {
-  setStep: (step: number) => void;
   selectedDate: string;
-  today: string;
-  maxDate: string;
-  setSelectedDate: (date: string) => void;
-  setSelectedTime: (time: string) => void;
-  canGoToProgram: boolean;
-  availableSlots: string[];
   selectedTime: string;
+  slots: string[];
+  isLoading: boolean;
+  isError: boolean;
+  onDateChange: (date: string) => void;
+  onTimeChange: (time: string) => void;
+  onBack: () => void;
+  canSubmit: boolean;
+  submitText: string;
 }) {
   return (
     <section>
@@ -31,84 +44,57 @@ export default function BookingSelectDateAndTime({
         Выберите удобный день и свободный слот.
       </p>
 
-      {/* Date */}
-
       <div className="mt-6">
         <label
-          htmlFor="booking_date"
+          htmlFor="booking_date_picker"
           className="mb-2 block text-lg font-medium text-gray-900"
         >
           Дата
         </label>
 
-        <div className="relative">
-          <input
-            id="booking_date"
-            name="booking_date"
-            type="date"
-            value={selectedDate}
-            min={today}
-            max={maxDate}
-            onChange={(event) => {
-              setSelectedDate(event.target.value);
-              setSelectedTime("");
-            }}
-            className="block w-full appearance-none rounded-xl border border-gray-200 bg-white px-4 py-3 text-gray-900 outline-none transition focus:border-gray-900 focus:ring-1 focus:ring-gray-900"
-          />
-        </div>
+        <input
+          id="booking_date_picker"
+          type="date"
+          value={selectedDate}
+          min={getToday()}
+          max={getMaxBookingDate()}
+          onChange={(event) => onDateChange(event.target.value)}
+          className="block w-full appearance-none rounded-xl border border-gray-200 bg-white px-4 py-3 text-gray-900 outline-none transition focus:border-gray-900 focus:ring-1 focus:ring-gray-900"
+        />
       </div>
-
-      {/* Time */}
 
       <div className="mt-6">
         <p className="mb-3 text-lg font-medium text-gray-900">Время</p>
 
-        {availableSlots.length === 0 ? (
-          <p className="rounded-xl bg-gray-50 p-4 text-lg text-gray-500">
-            На выбранную дату свободных слотов нет.
-          </p>
+        {isLoading ? (
+          <SlotsMessage>Загружаем свободное время…</SlotsMessage>
+        ) : isError ? (
+          <SlotsMessage>
+            Не удалось загрузить свободное время. Попробуйте позже.
+          </SlotsMessage>
+        ) : slots.length === 0 ? (
+          <SlotsMessage>На выбранную дату свободных слотов нет.</SlotsMessage>
         ) : (
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-            {availableSlots.map((slot) => {
-              const isSelected = selectedTime === slot;
-
-              return (
-                <button
-                  key={slot}
-                  type="button"
-                  onClick={() => setSelectedTime(slot)}
-                  className={clsx(
-                    "rounded-xl border px-3 py-3 text-lg font-medium transition-all",
-                    isSelected
-                      ? "border-gray-900 bg-gray-900 text-white"
-                      : "border-gray-200 bg-white text-gray-900 hover:border-gray-400",
-                  )}
-                >
-                  {slot}
-                </button>
-              );
-            })}
+            {slots.map((slot) => (
+              <SelectableButton
+                key={slot}
+                selected={selectedTime === slot}
+                onClick={() => onTimeChange(slot)}
+                className="px-3 py-3 text-lg font-medium"
+              >
+                {slot}
+              </SelectableButton>
+            ))}
           </div>
         )}
       </div>
 
       <div className="mt-8 flex justify-between">
-        <button
-          type="button"
-          onClick={() => setStep(1)}
-          className="rounded-xl bg-gray-100 px-5 py-3 font-medium text-gray-700 transition hover:bg-gray-200"
-        >
-          Назад
-        </button>
-
-        <button
-          type="button"
-          disabled={!canGoToProgram}
-          onClick={() => setStep(3)}
-          className="rounded-xl bg-gray-900 px-6 py-3 font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          Далее
-        </button>
+        <BackButton onClick={onBack} />
+        <Button type="submit" disabled={!canSubmit}>
+          {submitText}
+        </Button>
       </div>
     </section>
   );

@@ -1,48 +1,55 @@
 "use client";
 
-import { useState } from "react";
-import { TrashIcon } from "@heroicons/react/24/outline";
-import clsx from "clsx";
+import { useId, useState } from "react";
 
 export default function ConfirmModal({
   action,
-  actionText,
-  buttonText,
-  disabled,
+  title,
+  message,
+  confirmText,
+  triggerTitle,
+  triggerClassName,
+  disabled = false,
+  children,
 }: {
   action: () => Promise<void>;
-  actionText: string;
-  buttonText: string;
-  disabled: boolean;
+  title: string;
+  message: string;
+  confirmText: string;
+  triggerTitle?: string;
+  triggerClassName?: string;
+  disabled?: boolean;
+  // Content of the button that opens the modal
+  children: React.ReactNode;
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const titleId = useId();
+
   return (
     <>
       <button
         type="button"
         disabled={disabled}
-        title={
-          disabled ? "You can't remove completed booking" : "Remove booking"
-        }
+        title={triggerTitle}
         onClick={() => setIsOpen(true)}
-        className={clsx("rounded-md border p-2 hover:bg-gray-100", {
-          "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed opacity-60":
-            disabled,
-        })}
+        className={triggerClassName}
       >
-        <span className="sr-only">Delete</span>
-        <TrashIcon className="w-5" />
+        {children}
       </button>
 
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="w-1/3 rounded-lg bg-white p-6 shadow-lg">
-            <h2 className="text-lg font-semibold">Подтвердите {actionText}</h2>
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+        >
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
+            <h2 id={titleId} className="text-lg font-semibold">
+              {title}
+            </h2>
 
-            <p className="mt-2 text-sm text-gray-600 text-wrap ">
-              Вы действительно хотите удалить запись? Это действие нельзя
-              отменить!
-            </p>
+            <p className="mt-2 text-sm text-wrap text-gray-600">{message}</p>
 
             <div className="mt-6 flex justify-end gap-3">
               <button
@@ -58,7 +65,7 @@ export default function ConfirmModal({
                   type="submit"
                   className="rounded bg-red-600 px-4 py-2 text-white hover:bg-red-700"
                 >
-                  {buttonText}
+                  {confirmText}
                 </button>
               </form>
             </div>

@@ -1,12 +1,25 @@
-import BookingStatus from "@/app/ui/booking/booking_status";
-import { DeleteBooking, UpdateBooking } from "@/app/ui/shared/buttons";
+import clsx from "clsx";
 import { fetchFilteredBookings } from "@/app/lib/data/bookings";
-import ConfirmBookingButton from "@/app/ui/shared/confirmBookingButton";
-import CompleteBookingButton from "@/app/ui/shared/completeBookingButton";
-import { auth } from "@/auth";
-import { getUserById } from "@/app/lib/data/users";
-import { BookingResponse } from "@/app/lib/definitions";
-import BookingMassageType from "@/app/ui/booking/booking_massage_type";
+import { getMassageTypes } from "@/app/lib/data/massage_types";
+import { getCurrentUser } from "@/app/lib/session";
+import BookingStatus from "@/app/ui/booking/booking_status";
+import BookingActions from "@/app/ui/booking/booking_actions";
+
+const COLUMNS = [
+  { label: "Клиент", className: "px-6" },
+  { label: "Массажист", className: "px-6" },
+  { label: "Тип", className: "px-4" },
+  { label: "Дата / Время", className: "px-4" },
+  { label: "Статус", className: "px-4" },
+];
+
+function DetailLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+      {children}
+    </p>
+  );
+}
 
 export default async function BookingTable({
   query,
@@ -15,17 +28,22 @@ export default async function BookingTable({
   query: string;
   currentPage: number;
 }) {
-  const session = await auth();
-  const userId = session?.user?.id;
-  const user = userId ? await getUserById(userId) : null;
-  const bookings = await fetchFilteredBookings(query, currentPage);
+  const [user, bookings, massageTypes] = await Promise.all([
+    getCurrentUser(),
+    fetchFilteredBookings(query, currentPage),
+    getMassageTypes(),
+  ]);
 
-  function canEditBooking(booking: BookingResponse): boolean {
-    if (user?.role === "admin") {
-      return true;
-    }
-    if (booking.status === "completed") return false;
-    return false;
+  const massageTypeNames = new Map(
+    massageTypes.map((type) => [type.id, type.name]),
+  );
+
+  if (bookings.length === 0) {
+    return (
+      <p className="mt-8 rounded-2xl border border-gray-200 bg-white p-8 text-center text-lg text-gray-500">
+        Сеансы не найдены.
+      </p>
+    );
   }
 
   return (
@@ -34,7 +52,7 @@ export default async function BookingTable({
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-gray-50 shadow-sm">
           {/* MOBILE VIEW */}
           <div className="md:hidden">
-            {bookings?.map((booking) => (
+            {bookings.map((booking) => (
               <div
                 key={booking.id}
                 className="border-b border-gray-200 bg-white p-5 last:border-b-0"
@@ -45,7 +63,6 @@ export default async function BookingTable({
                     <p className="truncate text-lg font-medium text-gray-900">
                       {booking.user_name}
                     </p>
-
                     <p className="mt-1 text-sm text-gray-500">
                       {booking.therapist_name}
                     </p>
@@ -59,58 +76,30 @@ export default async function BookingTable({
                 {/* Booking information */}
                 <div className="mt-5 grid grid-cols-2 gap-4 border-t border-gray-100 pt-4">
                   <div>
-                    <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
-                      Массаж
+                    <DetailLabel>Массаж</DetailLabel>
+                    <p className="mt-1">
+                      {massageTypeNames.get(booking.massage_type)}
                     </p>
-
-                    <div className="mt-1">
-                      <BookingMassageType
-                        massage_type={booking.massage_type}
-                        key={booking.massage_type}
-                      />
-                    </div>
                   </div>
 
                   <div>
-                    <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
-                      Продолжительность
-                    </p>
-
+                    <DetailLabel>Продолжительность</DetailLabel>
                     <p className="mt-1 text-base font-medium text-gray-900">
                       {booking.duration} минут
                     </p>
                   </div>
 
                   <div className="col-span-2">
-                    <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
-                      Дата и время
-                    </p>
-
+                    <DetailLabel>Дата и время</DetailLabel>
                     <p className="mt-1 text-base font-medium text-gray-900">
-                      {booking.date.toString()}
+                      {booking.date}
                     </p>
                   </div>
                 </div>
 
                 {/* Actions */}
                 <div className="mt-5 flex justify-end gap-2 border-t border-gray-100 pt-4">
-                  {booking.status === "booked" && user?.role === "admin" && (
-                    <ConfirmBookingButton bookingId={booking.id} />
-                  )}
-
-                  {booking.status === "confirmed" && user?.role === "admin" && (
-                    <CompleteBookingButton bookingId={booking.id} />
-                  )}
-
-                  <UpdateBooking
-                    id={booking.id}
-                    disabled={!canEditBooking(booking)}
-                  />
-
-                  <DeleteBooking
-                    id={booking.id}
-                    disabled={!canEditBooking(booking)}
-                  />
+                  <BookingActions booking={booking} user={user} />
                 </div>
               </div>
             ))}
@@ -120,41 +109,18 @@ export default async function BookingTable({
           <table className="hidden min-w-full text-gray-900 md:table">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50 text-left">
-                <th
-                  scope="col"
-                  className="px-6 py-5 text-sm font-medium uppercase tracking-wide text-gray-500"
-                >
-                  Клиент
-                </th>
-
-                <th
-                  scope="col"
-                  className="px-6 py-5 text-sm font-medium uppercase tracking-wide text-gray-500"
-                >
-                  Массажист
-                </th>
-
-                <th
-                  scope="col"
-                  className="px-4 py-5 text-sm font-medium uppercase tracking-wide text-gray-500"
-                >
-                  Тип
-                </th>
-
-                <th
-                  scope="col"
-                  className="px-4 py-5 text-sm font-medium uppercase tracking-wide text-gray-500"
-                >
-                  Дата / Время
-                </th>
-
-                <th
-                  scope="col"
-                  className="px-4 py-5 text-sm font-medium uppercase tracking-wide text-gray-500"
-                >
-                  Статус
-                </th>
-
+                {COLUMNS.map((column) => (
+                  <th
+                    key={column.label}
+                    scope="col"
+                    className={clsx(
+                      "py-5 text-sm font-medium uppercase tracking-wide text-gray-500",
+                      column.className,
+                    )}
+                  >
+                    {column.label}
+                  </th>
+                ))}
                 <th scope="col" className="relative py-5 pl-4 pr-6">
                   <span className="sr-only">Действия</span>
                 </th>
@@ -162,72 +128,45 @@ export default async function BookingTable({
             </thead>
 
             <tbody className="divide-y divide-gray-100 bg-white">
-              {bookings?.map((booking) => (
+              {bookings.map((booking) => (
                 <tr
                   key={booking.id}
                   className="group transition-colors hover:bg-gray-50/70"
                 >
-                  {/* Client */}
                   <td className="whitespace-nowrap px-6 py-5">
                     <p className="text-base font-medium text-gray-900">
                       {booking.user_name}
                     </p>
                   </td>
 
-                  {/* Therapist */}
                   <td className="whitespace-nowrap px-6 py-5">
                     <p className="text-base text-gray-700">
                       {booking.therapist_name}
                     </p>
                   </td>
 
-                  {/* Massage */}
                   <td className="whitespace-nowrap px-4 py-5">
                     <div className="flex flex-col gap-1">
-                      <BookingMassageType
-                        massage_type={booking.massage_type}
-                        key={booking.massage_type}
-                      />
+                      <span>{massageTypeNames.get(booking.massage_type)}</span>
                       <span className="text-sm text-gray-500">
                         {booking.duration} минут
                       </span>
                     </div>
                   </td>
 
-                  {/* Date */}
                   <td className="whitespace-nowrap px-4 py-5">
                     <span className="text-base font-medium text-gray-900">
                       {booking.date}
                     </span>
                   </td>
 
-                  {/* Status */}
                   <td className="whitespace-nowrap px-4 py-5">
                     <BookingStatus status={booking.status} />
                   </td>
 
-                  {/* Actions */}
                   <td className="whitespace-nowrap py-5 pl-4 pr-6">
                     <div className="flex justify-end gap-2 opacity-80 transition-opacity group-hover:opacity-100">
-                      {booking.status === "booked" &&
-                        user?.role === "admin" && (
-                          <ConfirmBookingButton bookingId={booking.id} />
-                        )}
-
-                      {booking.status === "confirmed" &&
-                        user?.role === "admin" && (
-                          <CompleteBookingButton bookingId={booking.id} />
-                        )}
-
-                      <UpdateBooking
-                        id={booking.id}
-                        disabled={!canEditBooking(booking)}
-                      />
-
-                      <DeleteBooking
-                        id={booking.id}
-                        disabled={!canEditBooking(booking)}
-                      />
+                      <BookingActions booking={booking} user={user} />
                     </div>
                   </td>
                 </tr>

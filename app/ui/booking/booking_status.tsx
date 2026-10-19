@@ -1,33 +1,50 @@
-import { CheckIcon, ClockIcon, TrophyIcon } from "@heroicons/react/24/outline";
+import {
+  CheckIcon,
+  ClockIcon,
+  TrophyIcon,
+  XMarkIcon,
+} from "@heroicons/react/24/outline";
 import clsx from "clsx";
+import type { BookingStatus as Status } from "@/app/lib/definitions";
 
-export default function BookingStatus({ status }: { status: string }) {
-  const statusConfig = {
-    booked: {
-      label: "Booked",
-      icon: ClockIcon,
-      className: "bg-gray-100 text-gray-600 ring-gray-200",
-      iconClassName: "text-gray-500",
-    },
-    confirmed: {
-      label: "Confirmed",
-      icon: CheckIcon,
-      className: "bg-gray-900 text-white ring-gray-900/10",
-      iconClassName: "text-white",
-    },
-    completed: {
-      label: "Completed",
-      icon: TrophyIcon,
-      className: "bg-gray-100 text-gray-900 ring-gray-200",
-      iconClassName: "text-gray-700",
-    },
-  } as const;
-
-  const config = statusConfig[status as keyof typeof statusConfig];
-
-  if (!config) {
-    return null;
+const STATUS_CONFIG: Record<
+  Status,
+  {
+    label: string;
+    icon: typeof ClockIcon;
+    className: string;
+    iconClassName: string;
   }
+> = {
+  booked: {
+    label: "Booked",
+    icon: ClockIcon,
+    className: "bg-gray-100 text-gray-600 ring-gray-200",
+    iconClassName: "text-gray-500",
+  },
+  confirmed: {
+    label: "Confirmed",
+    icon: CheckIcon,
+    className: "bg-gray-900 text-white ring-gray-900/10",
+    iconClassName: "text-white",
+  },
+  completed: {
+    label: "Completed",
+    icon: TrophyIcon,
+    className: "bg-gray-100 text-gray-900 ring-gray-200",
+    iconClassName: "text-gray-700",
+  },
+  canceled: {
+    label: "Canceled",
+    icon: XMarkIcon,
+    className: "bg-white text-gray-400 ring-gray-200",
+    iconClassName: "text-gray-400",
+  },
+};
+
+export default function BookingStatus({ status }: { status: Status }) {
+  const config = STATUS_CONFIG[status];
+  if (!config) return null;
 
   const Icon = config.icon;
 

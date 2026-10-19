@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   description: "Niko Massage bookings site",
 };
 
-export default function RootLayout({
+export default function BookingsLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;

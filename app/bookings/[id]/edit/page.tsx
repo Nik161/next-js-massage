@@ -1,31 +1,36 @@
-import { notFound } from "next/navigation";
-import { Metadata } from "next";
-import { fetchBookingById } from "@/app/lib/data/bookings";
+import type { Metadata } from "next";
+import { notFound, redirect } from "next/navigation";
 import CreateOrEditBookingForm from "@/app/ui/booking/create_or_edit_form";
-import { auth } from "@/auth";
+import { fetchBookingById } from "@/app/lib/data/bookings";
 import { getMassageTypes } from "@/app/lib/data/massage_types";
+import { getTherapists } from "@/app/lib/data/therapists";
+import { getCurrentUser } from "@/app/lib/session";
+import { canEditBooking } from "@/app/lib/permissions";
 
 export const metadata: Metadata = {
   title: "Edit Massage Reservation",
 };
 
-export default async function Page(props: { params: Promise<{ id: string }> }) {
-  const params = await props.params;
-  const id = params.id;
-  const booking = await fetchBookingById(id);
-  const session = await auth();
-  const massageTypes = await getMassageTypes();
-  if (!booking) {
-    notFound();
-  }
+export default async function Page(props: PageProps<"/bookings/[id]/edit">) {
+  const { id } = await props.params;
+  const [booking, user, therapists, massageTypes] = await Promise.all([
+    fetchBookingById(id),
+    getCurrentUser(),
+    getTherapists(),
+    getMassageTypes(),
+  ]);
+
+  if (!booking) notFound();
+  if (!canEditBooking(user)) redirect("/bookings");
 
   return (
-    <main className="min-w-3/4 flex mx-auto mt-10">
+    <div className="mx-auto mt-10 flex min-w-3/4">
       <CreateOrEditBookingForm
-        user={session?.user}
+        userName={user?.name || user?.email || ""}
         booking={booking}
+        therapists={therapists}
         massageTypes={massageTypes}
       />
-    </main>
+    </div>
   );
 }

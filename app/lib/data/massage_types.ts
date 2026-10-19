@@ -1,11 +1,9 @@
-import postgres from "postgres";
-import { MassageType } from "@/app/lib/definitions";
-
-const sql = postgres(process.env.POSTGRES_URL!, { ssl: "require" });
+import { sql } from "@/app/lib/db";
+import type { MassageType } from "@/app/lib/definitions";
 
 export async function getMassageTypes() {
   try {
-    const massageTypes = await sql<MassageType[]>`
+    return await sql<MassageType[]>`
       SELECT
         id,
         name,
@@ -13,9 +11,8 @@ export async function getMassageTypes() {
       FROM massage_types
       ORDER BY name
     `;
-    return massageTypes;
   } catch (error) {
     console.error("Database Error:", error);
-    throw new Error("Failed to get massage types");
+    throw new Error("Failed to get massage types.");
   }
 }
