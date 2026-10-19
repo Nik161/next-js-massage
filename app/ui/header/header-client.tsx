@@ -104,6 +104,7 @@ export default function HeaderClient({ isLoggedIn }: HeaderClientProps) {
             onClick={() => setIsMenuOpen((open) => !open)}
             className="relative z-50 flex size-11 flex-col items-center justify-center gap-1.5 md:hidden"
             aria-label="Меню"
+            aria-controls="mobile-menu"
             aria-expanded={isMenuOpen}
           >
             <span
@@ -126,6 +127,8 @@ export default function HeaderClient({ isLoggedIn }: HeaderClientProps) {
 
       {/* Mobile menu */}
       <div
+        id="mobile-menu"
+        aria-hidden={!isMenuOpen}
         className={clsx(
           "grain fixed inset-0 z-40 overflow-hidden bg-forest transition-[clip-path] duration-700 ease-out-expo md:hidden",
           isMenuOpen
