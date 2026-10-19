@@ -1,11 +1,27 @@
 import clsx from "clsx";
 
-// Small bordered square used for row actions (edit, delete, ...).
-export function iconButtonClassName(disabled = false) {
+type IconButtonTone = "neutral" | "danger" | "gold" | "forest";
+
+const TONES: Record<IconButtonTone, string> = {
+  neutral: "hover:border-forest/30 hover:bg-sage hover:text-forest",
+  danger:
+    "hover:border-terracotta/40 hover:bg-terracotta-soft hover:text-terracotta",
+  gold: "border-gold/50 text-gold-dark hover:bg-gold hover:text-forest",
+  forest: "border-forest/30 text-forest hover:bg-forest hover:text-cream",
+};
+
+// Round bordered button used for row actions (edit, delete, ...)
+export function iconButtonClassName(
+  disabled = false,
+  tone: IconButtonTone = "neutral",
+) {
   return clsx(
-    "rounded-md border p-2",
+    "inline-flex size-10 items-center justify-center rounded-full border transition-all duration-200",
     disabled
-      ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400 opacity-60"
-      : "hover:bg-gray-100",
+      ? "cursor-not-allowed border-line bg-sand text-muted/40"
+      : clsx(
+          "border-line bg-white text-muted hover:-translate-y-0.5 hover:shadow-soft active:scale-95",
+          TONES[tone],
+        ),
   );
 }

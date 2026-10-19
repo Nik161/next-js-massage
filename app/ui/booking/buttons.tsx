@@ -2,6 +2,7 @@ import Link from "next/link";
 import { PencilIcon, PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { deleteBooking } from "@/app/lib/actions";
 import ConfirmModal from "@/app/ui/shared/confirmModal";
+import { buttonClassName } from "@/app/ui/shared/button";
 import { iconButtonClassName } from "@/app/ui/shared/icon_button";
 
 const ADMIN_ONLY_TITLE = "Доступно только администратору";
@@ -10,10 +11,10 @@ export function CreateBooking() {
   return (
     <Link
       href="/bookings/create"
-      className="flex h-10 items-center rounded-lg bg-blue-600 px-4 text-sm font-medium text-white transition-colors hover:bg-blue-500 focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+      className={buttonClassName("accent", "group shrink-0 px-4 md:px-6")}
     >
-      <span className="hidden text-lg md:block">Записаться на сеанс</span>
-      <PlusIcon className="h-5 md:ml-4" />
+      <PlusIcon className="size-5 transition-transform duration-300 group-hover:rotate-90" />
+      <span className="hidden md:inline">Записаться на сеанс</span>
     </Link>
   );
 }
@@ -33,7 +34,7 @@ export function UpdateBooking({
         title={ADMIN_ONLY_TITLE}
         className={iconButtonClassName(true)}
       >
-        <PencilIcon className="w-5" />
+        <PencilIcon className="size-4" />
       </span>
     );
   }
@@ -44,7 +45,7 @@ export function UpdateBooking({
       title="Изменить запись"
       className={iconButtonClassName()}
     >
-      <PencilIcon className="w-5" />
+      <PencilIcon className="size-4" />
     </Link>
   );
 }
@@ -59,15 +60,15 @@ export function DeleteBooking({
   return (
     <ConfirmModal
       action={deleteBooking.bind(null, id)}
-      title="Подтвердите удаление бронирования"
-      message="Вы действительно хотите удалить запись? Это действие нельзя отменить!"
+      title="Удалить бронирование?"
+      message="Запись будет удалена без возможности восстановления."
       confirmText="Удалить"
       triggerTitle={disabled ? ADMIN_ONLY_TITLE : "Удалить запись"}
-      triggerClassName={iconButtonClassName(disabled)}
+      triggerClassName={iconButtonClassName(disabled, "danger")}
       disabled={disabled}
     >
       <span className="sr-only">Удалить</span>
-      <TrashIcon className="w-5" />
+      <TrashIcon className="size-4" />
     </ConfirmModal>
   );
 }

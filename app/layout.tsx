@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { cormorant, jost } from "@/app/ui/fonts";
 
 export const metadata: Metadata = {
   title: "Niko Massage",
@@ -14,8 +15,8 @@ export default function RootLayout({
   return (
     <html
       data-scroll-behavior="smooth"
-      lang="en"
-      className="h-full antialiased"
+      lang="ru"
+      className={`${jost.variable} ${cormorant.variable} h-full antialiased`}
     >
       <body className={`min-h-full flex flex-col `}>
         {/*<Header />*/}

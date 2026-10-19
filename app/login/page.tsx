@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 import LoginForm from "@/app/ui/login/login_form";
+import MassageName from "@/app/ui/shared/massage_name";
 
 export const metadata: Metadata = {
   title: "Login",
@@ -8,11 +10,18 @@ export const metadata: Metadata = {
 
 export default function LoginPage() {
   return (
-    <main className="flex items-center justify-center md:h-screen">
-      <div className="relative mx-auto flex w-full max-w-[400px] flex-col space-y-2.5 p-4 md:-mt-32">
-        <div className="flex h-20 w-full items-end rounded-lg bg-blue-500 p-3 md:h-36">
-          <div className="w-32 text-white md:w-36"></div>
-        </div>
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-12">
+      <div className="absolute inset-0 animate-slowzoom bg-[url('/images/main_hero.jpeg')] bg-cover bg-center" />
+      <div className="absolute inset-0 bg-linear-to-br from-forest/90 via-forest/75 to-terracotta/40" />
+
+      <div className="relative z-10 w-full max-w-md">
+        <Link
+          href="/"
+          className="mb-8 flex animate-fade-up justify-center font-display text-3xl font-semibold tracking-[0.05em] text-cream"
+        >
+          <MassageName />
+        </Link>
+
         <Suspense>
           <LoginForm />
         </Suspense>

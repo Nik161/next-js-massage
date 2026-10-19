@@ -6,11 +6,16 @@ import Link from "next/link";
 import { generatePagination } from "@/app/lib/pagination";
 import { usePathname, useSearchParams } from "next/navigation";
 
+const ITEM_CLASS =
+  "flex size-10 items-center justify-center rounded-full text-sm font-medium transition-all duration-200";
+
 export default function Pagination({ totalPages }: { totalPages: number }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const currentPage = Number(searchParams.get("page")) || 1;
   const allPages = generatePagination(currentPage, totalPages);
+
+  if (totalPages <= 1) return null;
 
   const createPageURL = (pageNumber: number | string) => {
     const params = new URLSearchParams(searchParams);
@@ -19,42 +24,31 @@ export default function Pagination({ totalPages }: { totalPages: number }) {
   };
 
   return (
-    <>
-      <div className="inline-flex">
-        <PaginationArrow
-          direction="left"
-          href={createPageURL(currentPage - 1)}
-          isDisabled={currentPage <= 1}
+    <nav
+      aria-label="Страницы"
+      className="inline-flex items-center gap-1 rounded-full border border-line bg-white p-1 shadow-soft"
+    >
+      <PaginationArrow
+        direction="left"
+        href={createPageURL(currentPage - 1)}
+        isDisabled={currentPage <= 1}
+      />
+
+      {allPages.map((page, index) => (
+        <PaginationNumber
+          key={`${page}-${index}`}
+          href={createPageURL(page)}
+          page={page}
+          isActive={currentPage === page}
         />
+      ))}
 
-        <div className="flex -space-x-px">
-          {allPages.map((page, index) => {
-            let position: "first" | "last" | "single" | "middle" | undefined;
-
-            if (index === 0) position = "first";
-            if (index === allPages.length - 1) position = "last";
-            if (allPages.length === 1) position = "single";
-            if (page === "...") position = "middle";
-
-            return (
-              <PaginationNumber
-                key={`${page}-${index}`}
-                href={createPageURL(page)}
-                page={page}
-                position={position}
-                isActive={currentPage === page}
-              />
-            );
-          })}
-        </div>
-
-        <PaginationArrow
-          direction="right"
-          href={createPageURL(currentPage + 1)}
-          isDisabled={currentPage >= totalPages}
-        />
-      </div>
-    </>
+      <PaginationArrow
+        direction="right"
+        href={createPageURL(currentPage + 1)}
+        isDisabled={currentPage >= totalPages}
+      />
+    </nav>
   );
 }
 
@@ -62,28 +56,31 @@ function PaginationNumber({
   page,
   href,
   isActive,
-  position,
 }: {
   page: number | string;
   href: string;
-  position?: "first" | "last" | "middle" | "single";
   isActive: boolean;
 }) {
-  const className = clsx(
-    "flex h-10 w-10 items-center justify-center text-sm border",
-    {
-      "rounded-l-md": position === "first" || position === "single",
-      "rounded-r-md": position === "last" || position === "single",
-      "z-10 bg-blue-600 border-blue-600 text-white": isActive,
-      "hover:bg-gray-100": !isActive && position !== "middle",
-      "text-gray-300": position === "middle",
-    },
-  );
+  if (page === "...") {
+    return <span className={clsx(ITEM_CLASS, "text-muted")}>…</span>;
+  }
 
-  return isActive || position === "middle" ? (
-    <div className={className}>{page}</div>
-  ) : (
-    <Link href={href} className={className}>
+  if (isActive) {
+    return (
+      <span
+        aria-current="page"
+        className={clsx(ITEM_CLASS, "animate-pop bg-forest text-cream")}
+      >
+        {page}
+      </span>
+    );
+  }
+
+  return (
+    <Link
+      href={href}
+      className={clsx(ITEM_CLASS, "text-ink hover:bg-sage hover:text-forest")}
+    >
       {page}
     </Link>
   );
@@ -98,27 +95,22 @@ function PaginationArrow({
   direction: "left" | "right";
   isDisabled?: boolean;
 }) {
-  const className = clsx(
-    "flex h-10 w-10 items-center justify-center rounded-md border",
-    {
-      "pointer-events-none text-gray-300": isDisabled,
-      "hover:bg-gray-100": !isDisabled,
-      "mr-2 md:mr-4": direction === "left",
-      "ml-2 md:ml-4": direction === "right",
-    },
-  );
-
   const icon =
     direction === "left" ? (
-      <ArrowLeftIcon className="w-4" />
+      <ArrowLeftIcon className="size-4" />
     ) : (
-      <ArrowRightIcon className="w-4" />
+      <ArrowRightIcon className="size-4" />
     );
+  const label = direction === "left" ? "Предыдущая" : "Следующая";
 
   return isDisabled ? (
-    <div className={className}>{icon}</div>
+    <span className={clsx(ITEM_CLASS, "text-muted/30")}>{icon}</span>
   ) : (
-    <Link className={className} href={href}>
+    <Link
+      href={href}
+      aria-label={label}
+      className={clsx(ITEM_CLASS, "text-ink hover:bg-sage hover:text-forest")}
+    >
       {icon}
     </Link>
   );

@@ -1,7 +1,13 @@
+import { ClockIcon } from "@heroicons/react/24/outline";
 import { MASSAGE_DURATIONS } from "@/app/constants/massage_durations";
 import type { MassageType } from "@/app/lib/definitions";
 import SelectableButton from "@/app/ui/booking/selectable_button";
-import { BackButton, NextButton } from "@/app/ui/booking/step_navigation";
+import {
+  BackButton,
+  NextButton,
+  StepHeader,
+} from "@/app/ui/booking/step_navigation";
+import { BOOKING_STEPS } from "@/app/ui/booking/booking_progress";
 
 export default function BookingSelectProgramm({
   massageTypes,
@@ -22,49 +28,59 @@ export default function BookingSelectProgramm({
 }) {
   return (
     <section>
-      <h2 className="text-2xl font-medium text-gray-900">Выберите программу</h2>
+      <StepHeader
+        step={2}
+        totalSteps={BOOKING_STEPS.length}
+        title="Выберите программу"
+        subtitle="Техника массажа и продолжительность сеанса."
+      />
 
-      <p className="mt-2 text-sm text-gray-500">
-        Выберите программу и продолжительность сеанса.
-      </p>
-
-      <div className="mt-6">
-        <p className="mb-3 text-sm font-medium text-gray-900">Программа</p>
-
-        <div className="grid gap-3">
-          {massageTypes.map((massage) => (
-            <SelectableButton
-              key={massage.id}
-              selected={selectedMassage === massage.id}
-              onClick={() => onMassageChange(massage.id)}
-              className="p-4 text-left"
-            >
-              <div className="font-medium">{massage.name}</div>
-            </SelectableButton>
-          ))}
-        </div>
+      <div className="mt-8 grid gap-3 sm:grid-cols-2">
+        {massageTypes.map((massage, index) => (
+          <SelectableButton
+            key={massage.id}
+            selected={selectedMassage === massage.id}
+            onClick={() => onMassageChange(massage.id)}
+            style={{ animationDelay: `${index * 60}ms` }}
+            className="animate-fade-up p-5 pr-12"
+          >
+            <span className="block font-display text-xl font-medium text-ink">
+              {massage.name}
+            </span>
+            {massage.description && (
+              <span className="mt-1 block text-sm leading-relaxed text-muted">
+                {massage.description}
+              </span>
+            )}
+          </SelectableButton>
+        ))}
       </div>
 
-      <div className="mt-6">
-        <p className="mb-3 text-sm font-medium text-gray-900">
-          Продолжительность
-        </p>
+      <h3 className="mt-10 flex items-center gap-2 text-sm font-medium uppercase tracking-[0.15em] text-muted">
+        <ClockIcon className="size-4" />
+        Продолжительность
+      </h3>
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {MASSAGE_DURATIONS.map((duration) => (
-            <SelectableButton
-              key={duration}
-              selected={selectedDuration === duration}
-              onClick={() => onDurationChange(duration)}
-              className="px-4 py-3 font-medium"
-            >
-              {duration} мин.
-            </SelectableButton>
-          ))}
-        </div>
+      <div className="mt-3 grid grid-cols-3 gap-3">
+        {MASSAGE_DURATIONS.map((duration) => (
+          <SelectableButton
+            key={duration}
+            variant="chip"
+            selected={selectedDuration === duration}
+            onClick={() => onDurationChange(duration)}
+            className="py-4"
+          >
+            <span className="block font-display text-2xl font-medium">
+              {duration}
+            </span>
+            <span className="text-xs uppercase tracking-wider opacity-70">
+              минут
+            </span>
+          </SelectableButton>
+        ))}
       </div>
 
-      <div className="mt-8 flex justify-between">
+      <div className="mt-10 flex justify-between">
         <BackButton onClick={onBack} />
         <NextButton
           disabled={!selectedMassage || !selectedDuration}

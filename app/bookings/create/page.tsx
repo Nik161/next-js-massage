@@ -16,7 +16,7 @@ export default async function Page() {
   ]);
 
   return (
-    <div className="mx-auto mt-10 flex min-w-3/4">
+    <div className="relative z-10 mx-auto -mt-12 w-full max-w-6xl px-4 pb-16">
       <CreateOrEditBookingForm
         userName={user?.name || user?.email || ""}
         therapists={therapists}
