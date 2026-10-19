@@ -34,3 +34,38 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Testing
+
+### Unit and component tests (Vitest)
+
+```bash
+pnpm test           # watch mode
+pnpm test:unit      # single run
+pnpm test:coverage  # with a coverage report in ./coverage
+```
+
+Tests live in `tests/unit`: business logic (`lib`), the slots API route (`api`)
+and client components (`ui`, rendered with React Testing Library in jsdom).
+The database, Auth.js and Resend are mocked, so no services are needed.
+
+### End-to-end tests (Playwright)
+
+```bash
+pnpm test:e2e
+```
+
+Builds the app, starts it on port 3100 (`E2E_PORT`) and runs `tests/e2e` in a
+desktop and a mobile Chrome. It uses the locally installed Chrome; to use
+Playwright's own browser run `npx playwright install chromium` and remove
+`channel` from `playwright.config.ts`. Set `E2E_BASE_URL` to test an already
+running deployment instead.
+
+The suite talks to the database from `.env`. Tests for signed-in users run
+only when credentials are provided, and booking creation needs an explicit
+opt-in; the created booking is deleted afterwards:
+
+```bash
+E2E_USER_EMAIL=user@example.com E2E_USER_PASSWORD=secret pnpm test:e2e
+E2E_ALLOW_WRITES=1 E2E_USER_EMAIL=... E2E_USER_PASSWORD=... pnpm test:e2e
+```
