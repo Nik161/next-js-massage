@@ -1,9 +1,15 @@
-import { Cormorant_Garamond, Inter } from "next/font/google";
-import { Lusitana } from "next/font/google";
+import { Cormorant_Garamond, Jost } from "next/font/google";
 
-export const inter = Inter({ subsets: ["latin"] });
-export const cormorant = Cormorant_Garamond({ subsets: ["latin"] });
-export const lusitana = Lusitana({
-  weight: ["400", "700"],
-  subsets: ["latin"],
+// Display serif for headings
+export const cormorant = Cormorant_Garamond({
+  subsets: ["latin", "cyrillic"],
+  weight: ["300", "400", "500", "600"],
+  style: ["normal", "italic"],
+  variable: "--font-cormorant",
+});
+
+// UI sans-serif for body text
+export const jost = Jost({
+  subsets: ["latin", "cyrillic"],
+  variable: "--font-jost",
 });

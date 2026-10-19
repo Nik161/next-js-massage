@@ -1,6 +1,26 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import { useFormStatus } from "react-dom";
+import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
+import { Button } from "@/app/ui/shared/button";
+import Spinner from "@/app/ui/shared/spinner";
+
+function ConfirmButton({ children }: { children: React.ReactNode }) {
+  const { pending } = useFormStatus();
+
+  return (
+    <Button
+      type="submit"
+      variant="accent"
+      disabled={pending}
+      className="h-11 px-5"
+    >
+      {pending && <Spinner />}
+      {children}
+    </Button>
+  );
+}
 
 export default function ConfirmModal({
   action,
@@ -23,7 +43,16 @@ export default function ConfirmModal({
   children: React.ReactNode;
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const titleId = useId();
+
+  // The native <dialog> gives us focus trapping and Escape handling for free.
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    if (isOpen && !dialog.open) dialog.showModal();
+    if (!isOpen && dialog.open) dialog.close();
+  }, [isOpen]);
 
   return (
     <>
@@ -37,41 +66,45 @@ export default function ConfirmModal({
         {children}
       </button>
 
-      {isOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby={titleId}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
-        >
-          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
-            <h2 id={titleId} className="text-lg font-semibold">
+      <dialog
+        ref={dialogRef}
+        aria-labelledby={titleId}
+        onClose={() => setIsOpen(false)}
+        // Clicking the backdrop (the dialog element itself) closes it.
+        onClick={(event) => {
+          if (event.target === event.currentTarget) setIsOpen(false);
+        }}
+        className="m-auto w-[calc(100%-2rem)] max-w-md rounded-3xl bg-white p-0 text-ink shadow-lift open:animate-scale-in backdrop:bg-forest-deep/50 backdrop:backdrop-blur-sm"
+      >
+        {isOpen && (
+          <div className="p-7">
+            <div className="flex size-12 animate-pop items-center justify-center rounded-full bg-terracotta-soft text-terracotta">
+              <ExclamationTriangleIcon className="size-6" />
+            </div>
+
+            <h2 id={titleId} className="mt-5 font-display text-2xl font-medium">
               {title}
             </h2>
 
-            <p className="mt-2 text-sm text-wrap text-gray-600">{message}</p>
+            <p className="mt-2 leading-relaxed text-muted">{message}</p>
 
-            <div className="mt-6 flex justify-end gap-3">
-              <button
+            <div className="mt-7 flex justify-end gap-3">
+              <Button
                 type="button"
+                variant="ghost"
                 onClick={() => setIsOpen(false)}
-                className="rounded border px-4 py-2 hover:bg-gray-100"
+                className="h-11 px-5"
               >
                 Отмена
-              </button>
+              </Button>
 
               <form action={action}>
-                <button
-                  type="submit"
-                  className="rounded bg-red-600 px-4 py-2 text-white hover:bg-red-700"
-                >
-                  {confirmText}
-                </button>
+                <ConfirmButton>{confirmText}</ConfirmButton>
               </form>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </dialog>
     </>
   );
 }

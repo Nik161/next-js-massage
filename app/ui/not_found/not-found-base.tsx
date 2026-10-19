@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { FaceFrownIcon } from "@heroicons/react/24/outline";
+import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { buttonClassName } from "@/app/ui/shared/button";
 
 export default function NotFoundBase({
   backText,
@@ -11,15 +12,24 @@ export default function NotFoundBase({
   url: string;
 }) {
   return (
-    <main className="flex flex-col items-center justify-center gap-2 mt-5">
-      <FaceFrownIcon className="w-10 text-gray-400" />
-      <h1 className="text-xl">{message}</h1>
+    <div className="flex min-h-[50vh] flex-col items-center justify-center px-4 py-16 text-center">
+      <span className="animate-fade-up font-display text-8xl font-light text-gold">
+        404
+      </span>
+      <div className="mt-2 h-px w-16 animate-fade-in bg-gold/60 [animation-delay:150ms]" />
+      <h1 className="mt-6 animate-fade-up font-display text-3xl text-ink [animation-delay:100ms]">
+        {message}
+      </h1>
       <Link
         href={url}
-        className="mt-4 rounded-md bg-blue-500 px-4 py-2 text-xl text-white transition-colors hover:bg-blue-400"
+        className={buttonClassName(
+          "primary",
+          "mt-8 animate-fade-up [animation-delay:200ms]",
+        )}
       >
+        <ArrowLeftIcon className="size-4" />
         {backText}
       </Link>
-    </main>
+    </div>
   );
 }

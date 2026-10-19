@@ -1,61 +1,76 @@
 import clsx from "clsx";
+import { CheckIcon } from "@heroicons/react/20/solid";
 
-export const BOOKING_STEPS = ["Массажист", "Программа", "Дата / Время"];
+export const BOOKING_STEPS = ["Массажист", "Программа", "Дата и время"];
 
 export default function BookingProgress({
   step,
   setStep,
-  name,
 }: {
   step: number;
   setStep: (step: number) => void;
-  name: string;
 }) {
   return (
-    <>
-      <div className="mb-8 flex">
-        <span className="text-2xl text-gray-500">Вы записываетесь как</span>
-        <h1 className="ml-2 text-2xl font-medium text-gray-900">{name}</h1>
-      </div>
-
-      <div className="mb-8">
-        <div className="flex items-center justify-between text-lg">
-          {BOOKING_STEPS.map((label, index) => {
-            const stepNumber = index + 1;
-
-            // Completed steps are clickable to go back to them.
-            return stepNumber < step ? (
-              <button
-                key={label}
-                type="button"
-                title={`Вернуться к шагу «${label}»`}
-                onClick={() => setStep(stepNumber)}
-                className="cursor-pointer"
-              >
-                {label}
-              </button>
-            ) : (
-              <span
-                key={label}
-                className={clsx(
-                  stepNumber === step
-                    ? "font-medium text-gray-900"
-                    : "text-gray-400",
-                )}
-              >
-                {label}
-              </span>
-            );
-          })}
-        </div>
-
-        <div className="mt-3 h-1 overflow-hidden rounded-full bg-gray-100">
+    <nav aria-label="Шаги записи" className="mb-10">
+      <ol className="relative flex justify-between">
+        {/* Track behind the circles; the gold part grows with progress */}
+        <div className="absolute inset-x-[16.6%] top-5 h-0.5 rounded-full bg-line">
           <div
-            className="h-full rounded-full bg-gray-900 transition-all duration-300"
-            style={{ width: `${(step / BOOKING_STEPS.length) * 100}%` }}
+            className="h-full rounded-full bg-linear-to-r from-gold to-terracotta transition-[width] duration-700 ease-out-expo"
+            style={{
+              width: `${((step - 1) / (BOOKING_STEPS.length - 1)) * 100}%`,
+            }}
           />
         </div>
-      </div>
-    </>
+
+        {BOOKING_STEPS.map((label, index) => {
+          const stepNumber = index + 1;
+          const isDone = stepNumber < step;
+          const isCurrent = stepNumber === step;
+
+          return (
+            <li
+              key={label}
+              className="relative z-10 flex flex-1 justify-center"
+            >
+              <button
+                type="button"
+                // Completed steps are clickable to go back to them.
+                disabled={!isDone}
+                onClick={() => setStep(stepNumber)}
+                aria-current={isCurrent ? "step" : undefined}
+                className="group flex flex-col items-center gap-2 disabled:cursor-default"
+              >
+                <span
+                  className={clsx(
+                    "flex size-10 items-center justify-center rounded-full border-2 text-sm font-medium transition-all duration-500 ease-out-expo",
+                    isDone &&
+                      "border-gold bg-gold text-forest group-hover:scale-110",
+                    isCurrent &&
+                      "scale-110 border-forest bg-forest text-cream shadow-lift ring-4 ring-forest/10",
+                    !isDone && !isCurrent && "border-line bg-white text-muted",
+                  )}
+                >
+                  {isDone ? (
+                    <CheckIcon className="size-5 animate-pop" />
+                  ) : (
+                    stepNumber
+                  )}
+                </span>
+                <span
+                  className={clsx(
+                    "text-xs font-medium transition-colors duration-300 sm:text-sm",
+                    isCurrent ? "text-ink" : "text-muted",
+                    isDone && "group-hover:text-gold-dark",
+                  )}
+                >
+                  {label}
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
   );
 }

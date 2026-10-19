@@ -1,7 +1,7 @@
-import clsx from "clsx";
 import type { Therapist } from "@/app/lib/definitions";
 import SelectableButton from "@/app/ui/booking/selectable_button";
-import { NextButton } from "@/app/ui/booking/step_navigation";
+import { NextButton, StepHeader } from "@/app/ui/booking/step_navigation";
+import { BOOKING_STEPS } from "@/app/ui/booking/booking_progress";
 
 export default function BookingSelectTherapist({
   therapists,
@@ -16,42 +16,40 @@ export default function BookingSelectTherapist({
 }) {
   return (
     <section>
-      <h2 className="text-2xl font-medium text-gray-900">
-        Выберите массажиста
-      </h2>
+      <StepHeader
+        step={1}
+        totalSteps={BOOKING_STEPS.length}
+        title="Выберите массажиста"
+        subtitle="Специалист, у которого вы хотите пройти сеанс."
+      />
 
-      <p className="mt-2 text-xl text-gray-500">
-        Выберите специалиста, у которого хотите пройти сеанс.
-      </p>
-
-      <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {therapists.map((therapist) => {
-          const isSelected = selectedTherapist === therapist.id;
-
-          return (
-            <SelectableButton
-              key={therapist.id}
-              selected={isSelected}
-              onClick={() => onSelect(therapist.id)}
-              className="p-5 text-left"
-            >
-              <h3 className="text-3xl font-medium">{therapist.name}</h3>
+      <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {therapists.map((therapist, index) => (
+          <SelectableButton
+            key={therapist.id}
+            selected={selectedTherapist === therapist.id}
+            onClick={() => onSelect(therapist.id)}
+            style={{ animationDelay: `${index * 80}ms` }}
+            className="flex animate-fade-up flex-col gap-4 p-6"
+          >
+            <span className="flex size-16 items-center justify-center rounded-full bg-linear-to-br from-forest-soft to-forest font-display text-3xl text-gold ring-4 ring-gold/15">
+              {therapist.name[0]}
+            </span>
+            <span>
+              <span className="block font-display text-2xl font-medium text-ink">
+                {therapist.name}
+              </span>
               {therapist.description && (
-                <div
-                  className={clsx(
-                    "mt-1 whitespace-pre-line text-lg font-medium",
-                    isSelected ? "text-gray-200" : "text-gray-500",
-                  )}
-                >
+                <span className="mt-1 block whitespace-pre-line text-sm leading-relaxed text-muted">
                   {therapist.description}
-                </div>
+                </span>
               )}
-            </SelectableButton>
-          );
-        })}
+            </span>
+          </SelectableButton>
+        ))}
       </div>
 
-      <div className="mt-8 flex justify-end">
+      <div className="mt-10 flex justify-end">
         <NextButton disabled={!selectedTherapist} onClick={onNext} />
       </div>
     </section>
