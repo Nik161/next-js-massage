@@ -31,10 +31,13 @@ type BookingSelection = {
 
 const initialState: BookingFormState = { message: null, errors: {} };
 
-function getInitialSelection(booking?: BookingResponse): BookingSelection {
+function getInitialSelection(
+  booking?: BookingResponse,
+  initialTherapistId = "",
+): BookingSelection {
   if (!booking) {
     return {
-      therapistId: "",
+      therapistId: initialTherapistId,
       date: getToday(),
       time: "",
       massageType: "",
@@ -57,17 +60,19 @@ export default function CreateOrEditBookingForm({
   booking,
   therapists,
   massageTypes,
+  initialTherapistId,
 }: {
   userName: string;
   booking?: BookingResponse;
   therapists: Therapist[];
+  initialTherapistId?: string;
   massageTypes: MassageType[];
 }) {
   const [step, setStep] = useState(1);
   // Decides which side the next step slides in from
   const [direction, setDirection] = useState<"forward" | "back">("forward");
   const [selection, setSelection] = useState(() =>
-    getInitialSelection(booking),
+    getInitialSelection(booking, initialTherapistId),
   );
   const cardRef = useRef<HTMLDivElement>(null);
 

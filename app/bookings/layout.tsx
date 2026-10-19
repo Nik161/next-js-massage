@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Header from "@/app/ui/header/header";
 import HeroBooking from "@/app/ui/booking/hero";
+import Footer from "@/app/ui/footer/footer";
 
 export const metadata: Metadata = {
   title: "Niko Massage",
@@ -18,6 +19,7 @@ export default function BookingsLayout({
       <HeroBooking />
 
       <main className="w-full">{children}</main>
+      <Footer />
     </div>
   );
 }

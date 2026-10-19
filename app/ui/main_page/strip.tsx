@@ -1,21 +1,36 @@
-const benefits: string[] = [
+import { Marquee } from "@/app/ui/motion/decor";
+
+const BENEFITS = [
   "Натуральные масла",
   "Ароматерапия",
   "Мастера высшего класса",
   "Индивидуальный подход",
 ];
 
+const RITUALS = [
+  "Балийский массаж",
+  "Горячие камни",
+  "Ритуал джунглей",
+  "Тайский массаж",
+];
+
+// Two marquee rows moving in opposite directions
 export default function Strip() {
   return (
-    <div className="bg-[#2d4a2f] py-[18px] px-[5vw] flex justify-center gap-[6vw] flex-wrap">
-      {benefits.map((t: string) => (
-        <span
-          key={t}
-          className="text-[#f5ede0]/70 text-[0.72rem] tracking-[0.25em] uppercase flex items-center gap-2.5 before:content-['✦'] before:text-[#c9a84c] before:text-[0.5rem]"
-        >
-          {t}
-        </span>
-      ))}
-    </div>
+    <section aria-label="Преимущества" className="overflow-hidden">
+      <div className="bg-forest-soft py-4">
+        <Marquee
+          items={BENEFITS}
+          itemClassName="text-[0.72rem] uppercase tracking-[0.3em] text-cream/75"
+        />
+      </div>
+      <div className="-rotate-1 scale-[1.02] border-y border-gold/30 bg-cream py-6">
+        <Marquee
+          reverse
+          items={RITUALS}
+          itemClassName="font-display text-4xl font-light italic text-forest md:text-6xl"
+        />
+      </div>
+    </section>
   );
 }
