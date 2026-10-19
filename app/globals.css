@@ -264,7 +264,9 @@ body {
 
 /* ---------- Scroll reveal (see app/ui/motion/reveal.tsx) ---------- */
 [data-reveal] {
-  --reveal-delay-total: calc(var(--reveal-base, 0ms) + var(--reveal-delay, 0ms));
+  --reveal-delay-total: calc(
+    var(--reveal-base, 0ms) + var(--reveal-delay, 0ms)
+  );
   transition:
     opacity 1s var(--ease-out-expo),
     transform 1.1s var(--ease-out-expo),
@@ -409,7 +411,12 @@ body {
   inset: 0;
   z-index: -1;
   transform: translateX(-120%) skewX(-20deg);
-  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.35), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(255 255 255 / 0.35),
+    transparent
+  );
   transition: transform 0.9s var(--ease-out-expo);
 }
 
