@@ -16,6 +16,8 @@ export default function RootLayout({
     <html
       data-scroll-behavior="smooth"
       lang="ru"
+      // The intro script sets data-intro-seen before hydration
+      suppressHydrationWarning
       className={`${jost.variable} ${cormorant.variable} h-full antialiased`}
     >
       <body className={`min-h-full flex flex-col `}>

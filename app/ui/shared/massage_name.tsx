@@ -1,7 +1,11 @@
 export default function MassageName() {
   return (
-    <div>
-      Niko<span className="text-[#c9a84c]">·</span>Massage
-    </div>
+    <span className="group/logo inline-flex items-baseline">
+      Niko
+      <span className="mx-0.5 inline-block text-gold transition-transform duration-500 group-hover/logo:rotate-180 group-hover/logo:scale-150">
+        ·
+      </span>
+      Massage
+    </span>
   );
 }
