@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { CalendarDaysIcon } from "@heroicons/react/24/outline";
 import { fetchFilteredBookings } from "@/app/lib/data/bookings";
 import { getMassageTypes } from "@/app/lib/data/massage_types";
@@ -12,7 +13,23 @@ const COLUMNS = ["Клиент", "Массажист", "Программа", "Д
 // Rows appear one after another
 const STAGGER_MS = 50;
 
-function Avatar({ name }: { name: string }) {
+function Avatar({ name, imageUrl }: { name: string; imageUrl: string | null }) {
+  if (imageUrl) {
+    return (
+      <span className="relative size-20 shrink-0 overflow-hidden rounded-full bg-forest ring-2 ring-gold/20">
+        <Image
+          src={imageUrl}
+          alt={name}
+          fill
+          // Local photos go through the optimizer; remote hosts would need an allowlist
+          unoptimized={!imageUrl.startsWith("/")}
+          sizes="80px"
+          className="object-cover"
+        />
+      </span>
+    );
+  }
+
   const initials = name
     .split(/\s+/)
     .slice(0, 2)
@@ -20,7 +37,7 @@ function Avatar({ name }: { name: string }) {
     .join("");
 
   return (
-    <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-forest-soft to-forest font-display text-lg text-gold ring-2 ring-gold/20">
+    <span className="flex size-20 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-forest-soft to-forest font-display text-3xl text-gold ring-2 ring-gold/20">
       {initials}
     </span>
   );
@@ -75,6 +92,8 @@ export default async function BookingTable({
     getMassageTypes(),
   ]);
 
+  console.log("booking", bookings);
+
   const massageTypeNames = new Map(
     massageTypes.map((type) => [type.id, type.name]),
   );
@@ -93,7 +112,7 @@ export default async function BookingTable({
           >
             <div className="flex items-start justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
-                <Avatar name={booking.user_name} />
+                <Avatar name={booking.user_name} imageUrl={booking.image_url} />
                 <div className="min-w-0">
                   <p className="truncate font-medium text-ink">
                     {booking.user_name}
@@ -152,7 +171,10 @@ export default async function BookingTable({
               >
                 <td className="whitespace-nowrap py-4 pl-7 pr-5">
                   <div className="flex items-center gap-3">
-                    <Avatar name={booking.user_name} />
+                    <Avatar
+                      name={booking.user_name}
+                      imageUrl={booking.image_url}
+                    />
                     <div className="leading-tight">
                       <p className="font-medium text-ink">
                         {booking.user_name}

@@ -43,7 +43,7 @@ export default function SelectableButton({
       )}
     >
       {variant === "card" && selected && (
-        <span className="absolute right-3 top-3 flex size-6 animate-pop items-center justify-center rounded-full bg-gold text-forest">
+        <span className="absolute right-3 top-3 z-10 flex size-6 animate-pop items-center justify-center rounded-full bg-gold text-forest">
           <CheckIcon className="size-4" />
         </span>
       )}
