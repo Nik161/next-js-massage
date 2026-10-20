@@ -17,7 +17,7 @@ export type BookingResponse = {
   user_id: string;
   user_name: string;
   email: string;
-  image_url: string;
+  image_url: string | null;
   therapist_id: string;
   therapist_name: string;
 };

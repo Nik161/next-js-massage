@@ -13,12 +13,11 @@ const SERVICES = [
   "Спортивный массаж",
 ];
 
-// TODO: replace the placeholders with real contact details
 const CONTACTS = [
-  { label: "Адрес", value: "regions" },
-  { label: "Телефон", value: "phone number" },
-  { label: "Email", value: "email" },
-  { label: "Часы работы", value: "working hours" },
+  { label: "Адрес", value: "Весь мир" },
+  { label: "Телефон", value: "" },
+  { label: "Email", value: "nikovoronkovwork@gmail.com" },
+  { label: "Часы работы", value: "9:00-23:00" },
 ];
 
 const WORDMARK = "Niko·Massage".split("");
