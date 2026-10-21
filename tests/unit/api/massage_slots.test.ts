@@ -7,6 +7,9 @@ const mocks = vi.hoisted(() => ({
   getAvailableSlots: vi.fn(),
 }));
 vi.mock("@/auth", () => ({ auth: mocks.auth }));
+vi.mock("@/app/lib/data/users", () => ({
+  getUserById: async (id: string) => ({ id, role: "user" }),
+}));
 vi.mock("@/app/lib/data/availability", () => ({
   getAvailableSlots: mocks.getAvailableSlots,
 }));
@@ -77,7 +80,7 @@ describe("GET /api/massage_slots", () => {
 
     expect(response.status).toBe(500);
     await expect(response.json()).resolves.toEqual({
-      error: "Failed to get slots",
+      error: "Internal Server Error",
     });
   });
 });

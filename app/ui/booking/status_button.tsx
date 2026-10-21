@@ -1,8 +1,9 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { CheckBadgeIcon, CheckIcon } from "@heroicons/react/24/outline";
-import { setBookingStatus } from "@/app/lib/actions";
+import { setBookingStatus } from "@/app/lib/api_client";
 import type { ManualBookingStatus } from "@/app/lib/definitions";
 import { iconButtonClassName } from "@/app/ui/shared/icon_button";
 import Spinner from "@/app/ui/shared/spinner";
@@ -19,6 +20,7 @@ export default function SetBookingStatusButton({
   bookingId: string;
   status: ManualBookingStatus;
 }) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const { title, tone, Icon } = STATUS_BUTTONS[status];
 
@@ -28,6 +30,7 @@ export default function SetBookingStatusButton({
       onClick={() =>
         startTransition(async () => {
           await setBookingStatus(bookingId, status);
+          router.refresh();
         })
       }
       disabled={isPending}

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useActionState, useRef, useState } from "react";
 import {
   ArrowLeftIcon,
@@ -12,7 +13,12 @@ import type {
   MassageType,
   Therapist,
 } from "@/app/lib/definitions";
-import { createBooking, updateBooking } from "@/app/lib/actions";
+import type { BookingInput } from "@/app/lib/bookings";
+import {
+  ApiRequestError,
+  createBooking,
+  updateBooking,
+} from "@/app/lib/api_client";
 import { getToday } from "@/app/lib/booking_time";
 import BookingProgress from "@/app/ui/booking/booking_progress";
 import BookingSelectTherapist from "@/app/ui/booking/booking_select_therapist";
@@ -30,6 +36,30 @@ type BookingSelection = {
 };
 
 const initialState: BookingFormState = { message: null, errors: {} };
+
+const NETWORK_ERROR_MESSAGE =
+  "Не удалось отправить запрос. Попробуйте ещё раз.";
+
+function readBookingInput(formData: FormData): BookingInput {
+  return {
+    therapist_id: String(formData.get("therapist_id") ?? ""),
+    date: String(formData.get("booking_date") ?? ""),
+    time: String(formData.get("booking_time") ?? ""),
+    massage_type: String(formData.get("massage_type") ?? ""),
+    duration: Number(formData.get("booking_duration")),
+  };
+}
+
+function toFormState(error: unknown): BookingFormState {
+  if (error instanceof ApiRequestError) {
+    return {
+      message: error.body.error,
+      errors: error.body.fieldErrors ?? {},
+    };
+  }
+  console.error("Failed to save booking:", error);
+  return { message: NETWORK_ERROR_MESSAGE, errors: {} };
+}
 
 function getInitialSelection(
   booking?: BookingResponse,
@@ -75,9 +105,24 @@ export default function CreateOrEditBookingForm({
     getInitialSelection(booking, initialTherapistId),
   );
   const cardRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
-  const action = booking ? updateBooking.bind(null, booking.id) : createBooking;
-  const [state, formAction, isPending] = useActionState(action, initialState);
+  const [state, formAction, isPending] = useActionState(
+    async (_prevState: BookingFormState, formData: FormData) => {
+      const input = readBookingInput(formData);
+      try {
+        if (booking) await updateBooking(booking.id, input);
+        else await createBooking(input);
+      } catch (error) {
+        return toFormState(error);
+      }
+
+      router.push("/bookings");
+      router.refresh();
+      return initialState;
+    },
+    initialState,
+  );
 
   const updateSelection = (patch: Partial<BookingSelection>) =>
     setSelection((prev) => ({ ...prev, ...patch }));
@@ -116,7 +161,7 @@ export default function CreateOrEditBookingForm({
       action={formAction}
       className="grid w-full items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]"
     >
-      {/* Values submitted to the server action */}
+      {/* Values sent to the bookings API */}
       <input type="hidden" name="therapist_id" value={selection.therapistId} />
       <input type="hidden" name="booking_date" value={selection.date} />
       <input type="hidden" name="booking_time" value={selection.time} />

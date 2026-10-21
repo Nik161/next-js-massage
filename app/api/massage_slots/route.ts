@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { z } from "zod";
-import { auth } from "@/auth";
+import { parseWith, withApiErrors } from "@/app/lib/api/http";
+import { requireUser } from "@/app/lib/api/auth";
 import { MASSAGE_DURATIONS } from "@/app/constants/massage_durations";
 import { getAvailableSlots } from "@/app/lib/data/availability";
 
@@ -14,28 +15,16 @@ const SlotQuerySchema = z.object({
 });
 
 // GET /api/massage_slots?therapistId=...&date=YYYY-MM-DD&duration=60[&excludeBookingId=...]
-export async function GET(request: NextRequest) {
+export const GET = withApiErrors(async (request: NextRequest) => {
   // The proxy does not cover /api, so check the session here.
-  const session = await auth();
-  if (!session?.user) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  await requireUser(request);
 
-  const query = SlotQuerySchema.safeParse(
+  const query = parseWith(
+    SlotQuerySchema,
     Object.fromEntries(request.nextUrl.searchParams),
+    "Invalid query",
   );
-  if (!query.success) {
-    return Response.json(
-      { error: "Invalid query", details: z.flattenError(query.error) },
-      { status: 400 },
-    );
-  }
 
-  try {
-    const slots = await getAvailableSlots(query.data);
-    return Response.json({ slots });
-  } catch (error) {
-    console.error("Failed to get available slots:", error);
-    return Response.json({ error: "Failed to get slots" }, { status: 500 });
-  }
-}
+  const slots = await getAvailableSlots(query);
+  return Response.json({ slots });
+});

@@ -24,7 +24,7 @@ export type BookingResponse = {
 
 export type BookingFormState = {
   errors: {
-    type?: string[];
+    massage_type?: string[];
     duration?: string[];
     date?: string[];
     time?: string[];

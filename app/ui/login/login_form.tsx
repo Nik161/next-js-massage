@@ -7,8 +7,8 @@ import {
 } from "@heroicons/react/24/outline";
 import { ArrowRightIcon } from "@heroicons/react/20/solid";
 import { useActionState } from "react";
-import { useSearchParams } from "next/navigation";
-import { authenticate } from "@/app/lib/actions";
+import { useRouter, useSearchParams } from "next/navigation";
+import { signIn } from "next-auth/react";
 import { Button } from "@/app/ui/shared/button";
 import Spinner from "@/app/ui/shared/spinner";
 
@@ -43,11 +43,42 @@ function Field({
   );
 }
 
+// Goes through NextAuth's own credentials endpoint, which sets the session cookie.
+async function authenticate(
+  formData: FormData,
+  callbackUrl: string,
+): Promise<{ url: string } | { error: string }> {
+  try {
+    const result = await signIn("credentials", {
+      email: formData.get("email"),
+      password: formData.get("password"),
+      redirectTo: callbackUrl,
+      redirect: false,
+    });
+    if (result?.error === "CredentialsSignin") {
+      return { error: "Invalid credentials." };
+    }
+    // On success NextAuth returns the callback URL, checked to be on our origin.
+    if (result?.url) return { url: result.url };
+  } catch (error) {
+    console.error("Sign-in failed:", error);
+  }
+  return { error: "Something went wrong." };
+}
+
 export default function LoginForm() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/bookings";
   const [errorMessage, formAction, isPending] = useActionState(
-    authenticate,
+    async (_prevState: string | undefined, formData: FormData) => {
+      const result = await authenticate(formData, callbackUrl);
+      if ("error" in result) return result.error;
+
+      router.push(result.url);
+      // The header and the protected pages must render with the new session.
+      router.refresh();
+    },
     undefined,
   );
 
@@ -84,8 +115,6 @@ export default function LoginForm() {
           minLength={6}
         />
       </div>
-
-      <input type="hidden" name="redirectTo" value={callbackUrl} />
 
       <Button className="group mt-7 w-full" disabled={isPending}>
         {isPending ? <Spinner /> : null}

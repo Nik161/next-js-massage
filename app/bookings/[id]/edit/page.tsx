@@ -13,8 +13,9 @@ export const metadata: Metadata = {
 
 export default async function Page(props: PageProps<"/bookings/[id]/edit">) {
   const { id } = await props.params;
+  // Editing is admin only, so the booking is looked up without an owner filter.
   const [booking, user, therapists, massageTypes] = await Promise.all([
-    fetchBookingById(id),
+    fetchBookingById(id, null),
     getCurrentUser(),
     getTherapists(),
     getMassageTypes(),

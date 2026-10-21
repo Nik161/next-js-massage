@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { PencilIcon, PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
-import { deleteBooking } from "@/app/lib/actions";
+import { deleteBooking } from "@/app/lib/api_client";
 import ConfirmModal from "@/app/ui/shared/confirmModal";
 import { buttonClassName } from "@/app/ui/shared/button";
 import { iconButtonClassName } from "@/app/ui/shared/icon_button";
@@ -57,9 +60,14 @@ export function DeleteBooking({
   id: string;
   disabled: boolean;
 }) {
+  const router = useRouter();
+
   return (
     <ConfirmModal
-      action={deleteBooking.bind(null, id)}
+      action={async () => {
+        await deleteBooking(id);
+        router.refresh();
+      }}
       title="Удалить бронирование?"
       message="Запись будет удалена без возможности восстановления."
       confirmText="Удалить"
