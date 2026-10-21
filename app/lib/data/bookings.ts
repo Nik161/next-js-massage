@@ -20,22 +20,32 @@ function bookingColumns() {
   `;
 }
 
+// `null` means bookings of every user (admins), see bookingsOwnerFilter.
+export type BookingsOwner = string | null;
+
+function ownedBy(ownerId: BookingsOwner) {
+  return sql`(${ownerId}::uuid IS NULL OR bookings.user_id = ${ownerId}::uuid)`;
+}
+
 // Shared by the list and the page count, so pagination always matches the results.
-function matchesQuery(query: string) {
+function matchesQuery(query: string, ownerId: BookingsOwner) {
   const pattern = `%${query}%`;
   return sql`
-    users.name ILIKE ${pattern} OR
-    users.email ILIKE ${pattern} OR
-    bookings.status ILIKE ${pattern} OR
-    bookings.massage_type ILIKE ${pattern} OR
-    bookings.date::text ILIKE ${pattern} OR
-    bookings.duration::text ILIKE ${pattern}
+    ${ownedBy(ownerId)} AND (
+      users.name ILIKE ${pattern} OR
+      users.email ILIKE ${pattern} OR
+      bookings.status ILIKE ${pattern} OR
+      bookings.massage_type ILIKE ${pattern} OR
+      bookings.date::text ILIKE ${pattern} OR
+      bookings.duration::text ILIKE ${pattern}
+    )
   `;
 }
 
 export async function fetchFilteredBookings(
   query: string,
   currentPage: number,
+  ownerId: BookingsOwner,
 ) {
   const offset = (currentPage - 1) * ITEMS_PER_PAGE;
 
@@ -45,7 +55,7 @@ export async function fetchFilteredBookings(
       FROM bookings
         JOIN users ON bookings.user_id = users.id
         LEFT JOIN therapists ON bookings.therapist_id = therapists.id
-      WHERE ${matchesQuery(query)}
+      WHERE ${matchesQuery(query, ownerId)}
       ORDER BY bookings.date DESC
       LIMIT ${ITEMS_PER_PAGE} OFFSET ${offset}
     `;
@@ -55,13 +65,16 @@ export async function fetchFilteredBookings(
   }
 }
 
-export async function fetchBookingsPages(query: string) {
+export async function fetchBookingsPages(
+  query: string,
+  ownerId: BookingsOwner,
+) {
   try {
     const data = await sql<{ count: string }[]>`
       SELECT COUNT(*)
       FROM bookings
         JOIN users ON bookings.user_id = users.id
-      WHERE ${matchesQuery(query)}
+      WHERE ${matchesQuery(query, ownerId)}
     `;
 
     return Math.ceil(Number(data[0].count) / ITEMS_PER_PAGE);
@@ -73,6 +86,7 @@ export async function fetchBookingsPages(query: string) {
 
 export async function fetchBookingById(
   id: string,
+  ownerId: BookingsOwner,
 ): Promise<BookingResponse | undefined> {
   try {
     const bookings = await sql<BookingResponse[]>`
@@ -80,7 +94,7 @@ export async function fetchBookingById(
       FROM bookings
         JOIN users ON bookings.user_id = users.id
         LEFT JOIN therapists ON bookings.therapist_id = therapists.id
-      WHERE bookings.id = ${id}
+      WHERE bookings.id = ${id} AND ${ownedBy(ownerId)}
     `;
 
     return bookings[0];

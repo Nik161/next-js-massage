@@ -3,6 +3,7 @@ import { CalendarDaysIcon } from "@heroicons/react/24/outline";
 import { fetchFilteredBookings } from "@/app/lib/data/bookings";
 import { getMassageTypes } from "@/app/lib/data/massage_types";
 import { getCurrentUser } from "@/app/lib/session";
+import { bookingsOwnerFilter } from "@/app/lib/permissions";
 import { formatDayParts } from "@/app/lib/booking_time";
 import type { BookingResponse } from "@/app/lib/definitions";
 import BookingStatus from "@/app/ui/booking/booking_status";
@@ -86,13 +87,13 @@ export default async function BookingTable({
   query: string;
   currentPage: number;
 }) {
-  const [user, bookings, massageTypes] = await Promise.all([
-    getCurrentUser(),
-    fetchFilteredBookings(query, currentPage),
+  const user = await getCurrentUser();
+  if (!user) return null;
+
+  const [bookings, massageTypes] = await Promise.all([
+    fetchFilteredBookings(query, currentPage, bookingsOwnerFilter(user)),
     getMassageTypes(),
   ]);
-
-  console.log("booking", bookings);
 
   const massageTypeNames = new Map(
     massageTypes.map((type) => [type.id, type.name]),

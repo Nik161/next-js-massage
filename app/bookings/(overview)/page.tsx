@@ -5,6 +5,8 @@ import { CreateBooking } from "@/app/ui/booking/buttons";
 import BookingTable from "@/app/ui/booking/table";
 import { BookingTableSkeleton } from "@/app/ui/booking/skeletons";
 import { fetchBookingsPages } from "@/app/lib/data/bookings";
+import { getCurrentUser } from "@/app/lib/session";
+import { bookingsOwnerFilter } from "@/app/lib/permissions";
 
 export default async function Page(props: {
   searchParams: Promise<{
@@ -15,7 +17,11 @@ export default async function Page(props: {
   const searchParams = await props.searchParams;
   const query = searchParams.query || "";
   const currentPage = Number(searchParams.page) || 1;
-  const totalPages = await fetchBookingsPages(query);
+  const user = await getCurrentUser();
+  // The proxy only lets signed-in users here; a deleted account sees nothing.
+  const totalPages = user
+    ? await fetchBookingsPages(query, bookingsOwnerFilter(user))
+    : 0;
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 pb-16">

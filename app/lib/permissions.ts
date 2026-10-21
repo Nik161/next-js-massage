@@ -10,3 +10,9 @@ export function isAdmin(user: UserWithRole) {
 export function canEditBooking(user: UserWithRole) {
   return isAdmin(user);
 }
+
+// Admins see every booking, everyone else only their own.
+// Returns the owner to filter by, or null for no filter.
+export function bookingsOwnerFilter(user: Pick<User, "id" | "role">) {
+  return isAdmin(user) ? null : user.id;
+}

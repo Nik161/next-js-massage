@@ -3,9 +3,13 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { BookingResponse } from "@/app/lib/definitions";
 
-vi.mock("@/app/lib/actions", () => ({
+vi.mock("@/app/lib/api_client", () => ({
+  ApiRequestError: class extends Error {},
   createBooking: vi.fn(),
   updateBooking: vi.fn(),
+}));
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
 }));
 
 import CreateOrEditBookingForm from "@/app/ui/booking/create_or_edit_form";

@@ -35,6 +35,12 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
+## API
+
+All reads and writes are available as a JSON API under `/api`, used by the
+web app and meant for the mobile app too. See [docs/API.md](docs/API.md) for
+authentication (session cookie or Bearer token), roles and every endpoint.
+
 ## Testing
 
 ### Unit and component tests (Vitest)
@@ -45,7 +51,7 @@ pnpm test:unit      # single run
 pnpm test:coverage  # with a coverage report in ./coverage
 ```
 
-Tests live in `tests/unit`: business logic (`lib`), the slots API route (`api`)
+Tests live in `tests/unit`: business logic (`lib`), the API route handlers (`api`)
 and client components (`ui`, rendered with React Testing Library in jsdom).
 The database, Auth.js and Resend are mocked, so no services are needed.
 
