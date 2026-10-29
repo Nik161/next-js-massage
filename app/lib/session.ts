@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { getUserById } from "@/app/lib/data/users";
 
@@ -9,9 +10,10 @@ export const getCurrentUser = cache(async () => {
   return userId ? getUserById(userId) : undefined;
 });
 
-export async function requireUserId() {
-  const session = await auth();
-  const userId = session?.user?.id;
-  if (!userId) throw new Error("Unauthorized");
-  return userId;
+// For pages: the proxy already redirects signed-out visitors, but a proxy
+// bypass or a deleted account must not reach the page either.
+export async function requireCurrentUser() {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+  return user;
 }

@@ -6,7 +6,7 @@ import BalanceBadge from "@/app/ui/booking/balance_badge";
 import BookingTable from "@/app/ui/booking/table";
 import { BookingTableSkeleton } from "@/app/ui/booking/skeletons";
 import { fetchBookingsPages } from "@/app/lib/data/bookings";
-import { getCurrentUser } from "@/app/lib/session";
+import { requireCurrentUser } from "@/app/lib/session";
 import { bookingsOwnerFilter } from "@/app/lib/permissions";
 
 export default async function Page(props: {
@@ -18,11 +18,8 @@ export default async function Page(props: {
   const searchParams = await props.searchParams;
   const query = searchParams.query || "";
   const currentPage = Number(searchParams.page) || 1;
-  const user = await getCurrentUser();
-  // The proxy only lets signed-in users here; a deleted account sees nothing.
-  const totalPages = user
-    ? await fetchBookingsPages(query, bookingsOwnerFilter(user))
-    : 0;
+  const user = await requireCurrentUser();
+  const totalPages = await fetchBookingsPages(query, bookingsOwnerFilter(user));
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 pb-16">
@@ -36,7 +33,7 @@ export default async function Page(props: {
               Ваши <em className="text-terracotta">массажи</em>
             </h1>
           </div>
-          {user && <BalanceBadge minutes={user.balance} />}
+          <BalanceBadge minutes={user.balance} />
         </div>
 
         <div className="mt-6 flex items-center gap-3">

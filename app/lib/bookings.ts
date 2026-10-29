@@ -3,6 +3,7 @@ import { z } from "zod";
 import { sql } from "@/app/lib/db";
 import { ApiError } from "@/app/lib/api/http";
 import { isSlotAvailable } from "@/app/lib/data/availability";
+import { massageTypeExists } from "@/app/lib/data/massage_types";
 import {
   salonNow,
   toBookingDateTime,
@@ -28,7 +29,8 @@ const EXCLUSION_VIOLATION = "23P01";
 export const BookingInputSchema = z.object({
   massage_type: z
     .string({ message: "Please select a massage type." })
-    .min(1, { message: "Please select a massage type." }),
+    .min(1, { message: "Please select a massage type." })
+    .max(100, { message: "Please select a massage type." }),
   duration: z.coerce
     .number({ message: "Please enter a valid number." })
     .refine((value) => MASSAGE_DURATIONS.includes(value), {
@@ -54,10 +56,7 @@ function getBookingInterval({ date, time, duration }: BookingInput) {
 }
 
 // Friendly early check; the bookings_no_overlap constraint is the real guarantee.
-async function assertSlotAvailable(
-  booking: BookingInput,
-  excludeBookingId?: string,
-) {
+async function assertBookable(booking: BookingInput, excludeBookingId?: string) {
   const available = await isSlotAvailable({
     therapistId: booking.therapist_id,
     date: booking.date,
@@ -66,6 +65,12 @@ async function assertSlotAvailable(
     excludeBookingId,
   });
   if (!available) throw new ApiError(409, SLOT_TAKEN_MESSAGE);
+
+  if (!(await massageTypeExists(booking.massage_type))) {
+    throw new ApiError(400, "Unknown massage type.", {
+      massage_type: ["Please select a massage type."],
+    });
+  }
 }
 
 function isSlotTakenError(error: unknown) {
@@ -96,33 +101,38 @@ type BalanceRow = {
   status: BookingStatus;
 };
 
-// Who a booking email is about, read back right after the write.
+// Who and what a booking email is about, read back right after the write.
 type BookingPeople = {
   client_name: string;
   client_email: string;
   therapist_name: string | null;
+  massage_type_name: string | null;
 };
 
-// Selects the rows of the `changed` CTE together with their client and therapist.
+// Selects the rows of the `changed` CTE together with their client, therapist
+// and massage type name.
 function withPeople() {
   return sql`
     SELECT
       changed.*,
       users.name AS client_name,
       users.email AS client_email,
-      therapists.name AS therapist_name
+      therapists.name AS therapist_name,
+      massage_types.name AS massage_type_name
     FROM changed
       JOIN users ON users.id = changed.user_id
       LEFT JOIN therapists ON therapists.id = changed.therapist_id
+      LEFT JOIN massage_types ON massage_types.id = changed.massage_type
   `;
 }
 
 function toEmailData(
-  booking: BookingInput,
+  booking: Pick<BookingInput, "massage_type" | "duration" | "date" | "time">,
   people: BookingPeople,
 ): BookingEmailData {
   return {
-    type: booking.massage_type,
+    // The stored value is the type's id; the name is what people read.
+    type: people.massage_type_name ?? booking.massage_type,
     duration: booking.duration,
     date: booking.date,
     time: booking.time,
@@ -145,7 +155,7 @@ async function notify(
 }
 
 export async function createBooking(userId: string, booking: BookingInput) {
-  await assertSlotAvailable(booking);
+  await assertBookable(booking);
 
   const { startsAt, endsAt } = getBookingInterval(booking);
   const id = crypto.randomUUID();
@@ -168,7 +178,7 @@ export async function createBooking(userId: string, booking: BookingInput) {
             ${userId},
             ${booking.therapist_id}
           )
-          RETURNING user_id, therapist_id
+          RETURNING user_id, therapist_id, massage_type
         )
         ${withPeople()}
       `;
@@ -184,7 +194,7 @@ export async function createBooking(userId: string, booking: BookingInput) {
 }
 
 export async function updateBooking(id: string, booking: BookingInput) {
-  await assertSlotAvailable(booking, id);
+  await assertBookable(booking, id);
 
   const { startsAt, endsAt } = getBookingInterval(booking);
 
@@ -214,7 +224,7 @@ export async function updateBooking(id: string, booking: BookingInput) {
             ends_at = ${endsAt},
             therapist_id = ${booking.therapist_id}
           WHERE id = ${id}
-          RETURNING user_id, therapist_id
+          RETURNING user_id, therapist_id, massage_type
         )
         ${withPeople()}
       `;
@@ -268,14 +278,17 @@ export async function setBookingStatus(
 
   if (status === "confirmed") {
     const [row] = rows;
-    await notify(sendBookingConfirmedEmailToClient, {
-      type: row.massage_type,
-      duration: row.duration,
-      date: row.date.toISOString().slice(0, 10),
-      time: toSlotTime(row.date),
-      clientName: row.client_name,
-      clientEmail: row.client_email,
-      therapistName: row.therapist_name,
-    });
+    await notify(
+      sendBookingConfirmedEmailToClient,
+      toEmailData(
+        {
+          massage_type: row.massage_type,
+          duration: row.duration,
+          date: row.date.toISOString().slice(0, 10),
+          time: toSlotTime(row.date),
+        },
+        row,
+      ),
+    );
   }
 }

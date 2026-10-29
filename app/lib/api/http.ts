@@ -46,16 +46,18 @@ export function parseWith<T extends z.ZodType>(
   return result.data;
 }
 
+export async function readJsonBody(request: Request): Promise<unknown> {
+  try {
+    return await request.json();
+  } catch {
+    throw new ApiError(400, "Request body must be valid JSON");
+  }
+}
+
 export async function parseJsonBody<T extends z.ZodType>(
   request: Request,
   schema: T,
   message?: string,
 ) {
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    throw new ApiError(400, "Request body must be valid JSON");
-  }
-  return parseWith(schema, body, message);
+  return parseWith(schema, await readJsonBody(request), message);
 }

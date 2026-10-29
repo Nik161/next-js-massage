@@ -16,3 +16,8 @@ export async function getMassageTypes() {
     throw new Error("Failed to get massage types.");
   }
 }
+
+export async function massageTypeExists(id: string) {
+  const rows = await sql`SELECT 1 FROM massage_types WHERE id = ${id}`;
+  return rows.length > 0;
+}

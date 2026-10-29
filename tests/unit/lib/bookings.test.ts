@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   sql: vi.fn(),
   chargeMinutes: vi.fn(),
   isSlotAvailable: vi.fn(),
+  massageTypeExists: vi.fn(),
   sendEmail: vi.fn(),
   sendCreatedEmail: vi.fn(),
   sendConfirmedEmail: vi.fn(),
@@ -22,6 +23,9 @@ vi.mock("@/app/lib/db", () => ({
 vi.mock("@/app/lib/balance", () => ({ chargeMinutes: mocks.chargeMinutes }));
 vi.mock("@/app/lib/data/availability", () => ({
   isSlotAvailable: mocks.isSlotAvailable,
+}));
+vi.mock("@/app/lib/data/massage_types", () => ({
+  massageTypeExists: mocks.massageTypeExists,
 }));
 vi.mock("@/app/lib/email/booking_email", () => ({
   sendBookingEmailToTherapist: mocks.sendEmail,
@@ -46,9 +50,10 @@ const PEOPLE = {
   client_name: "Anna",
   client_email: "anna@example.com",
   therapist_name: "Maria",
+  massage_type_name: "Тайский массаж",
 };
 const EMAIL_DATA = {
-  type: "thai",
+  type: "Тайский массаж",
   duration: 60,
   date: "2026-10-20",
   time: "14:00",
@@ -93,6 +98,7 @@ async function expectApiError(promise: Promise<unknown>, status: number) {
 beforeEach(() => {
   for (const mock of Object.values(mocks)) mock.mockReset();
   mocks.isSlotAvailable.mockResolvedValue(true);
+  mocks.massageTypeExists.mockResolvedValue(true);
   mocks.sql.mockResolvedValue([{ id: "booking-1", ...STORED, ...PEOPLE }]);
   mocks.chargeMinutes.mockResolvedValue(undefined);
   mocks.sendEmail.mockResolvedValue({});
@@ -125,6 +131,16 @@ describe("createBooking", () => {
     const error = await expectApiError(createBooking("user-1", BOOKING), 409);
 
     expect(error.message).toBe("Это время уже занято, выберите другое.");
+    expect(mocks.sql).not.toHaveBeenCalled();
+  });
+
+  it("refuses a massage type that does not exist", async () => {
+    mocks.massageTypeExists.mockResolvedValue(false);
+
+    const error = await expectApiError(createBooking("user-1", BOOKING), 400);
+
+    expect(mocks.massageTypeExists).toHaveBeenCalledWith("thai");
+    expect(error.fieldErrors).toHaveProperty("massage_type");
     expect(mocks.sql).not.toHaveBeenCalled();
   });
 
@@ -284,6 +300,25 @@ describe("setBookingStatus", () => {
     await setBookingStatus("booking-1", "confirmed");
 
     expect(mocks.sendConfirmedEmail).toHaveBeenCalledWith(EMAIL_DATA);
+  });
+
+  it("falls back to the type id when the type has no name", async () => {
+    mocks.sql.mockResolvedValue([
+      {
+        massage_type: "thai",
+        duration: 60,
+        date: new Date("2026-10-20T14:00:00Z"),
+        ...PEOPLE,
+        massage_type_name: null,
+      },
+    ]);
+
+    await setBookingStatus("booking-1", "confirmed");
+
+    expect(mocks.sendConfirmedEmail).toHaveBeenCalledWith({
+      ...EMAIL_DATA,
+      type: "thai",
+    });
   });
 
   it("still confirms when the email fails", async () => {

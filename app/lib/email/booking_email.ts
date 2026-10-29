@@ -158,7 +158,6 @@ export async function sendBookingUpdatedEmailToTherapist(
 export async function sendBookingCreatedEmailToClient(
   booking: BookingEmailData,
 ) {
-  console.log("букинг", booking);
   return sendEmail(
     booking.clientEmail,
     "Вы записались на массаж",
