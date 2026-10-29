@@ -5,6 +5,7 @@ import { CheckIcon } from "@heroicons/react/20/solid";
 export default function SelectableButton({
   selected,
   onClick,
+  disabled = false,
   variant = "card",
   className,
   style,
@@ -12,6 +13,7 @@ export default function SelectableButton({
 }: {
   selected: boolean;
   onClick: () => void;
+  disabled?: boolean;
   // "card" is a large tile with a check badge, "chip" a compact pill
   variant?: "card" | "chip";
   className?: string;
@@ -23,6 +25,7 @@ export default function SelectableButton({
       type="button"
       aria-pressed={selected}
       onClick={onClick}
+      disabled={disabled}
       style={style}
       className={clsx(
         "relative border transition-all duration-300 ease-out-expo active:scale-[0.97]",
@@ -37,8 +40,9 @@ export default function SelectableButton({
           "rounded-xl text-center",
           selected
             ? "border-forest bg-forest text-cream shadow-soft"
-            : "border-line bg-white text-ink hover:border-forest/40 hover:bg-sage/60",
+            : "border-line bg-white text-ink enabled:hover:border-forest/40 enabled:hover:bg-sage/60",
         ],
+        "disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100",
         className,
       )}
     >

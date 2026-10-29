@@ -55,4 +55,16 @@ describe("SelectableButton", () => {
     );
     expect(container.querySelector("svg")).not.toBeInTheDocument();
   });
+
+  it("ignores clicks while disabled", async () => {
+    const onClick = vi.fn();
+    render(
+      <SelectableButton selected={false} onClick={onClick} disabled>
+        90
+      </SelectableButton>,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "90" }));
+    expect(onClick).not.toHaveBeenCalled();
+  });
 });

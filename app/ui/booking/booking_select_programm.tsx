@@ -29,6 +29,11 @@ export default function BookingSelectProgramm({
   onBack: () => void;
   onNext: () => void;
 }) {
+  // Without a balance (editing) every duration stays available
+  const canAfford = (duration: number) =>
+    balance === undefined || duration <= balance;
+  const canAffordAny = MASSAGE_DURATIONS.some(canAfford);
+
   return (
     <section>
       <StepHeader
@@ -74,6 +79,7 @@ export default function BookingSelectProgramm({
             variant="chip"
             selected={selectedDuration === duration}
             onClick={() => onDurationChange(duration)}
+            disabled={!canAfford(duration)}
             className="py-4"
           >
             <span className="block font-display text-2xl font-medium">
@@ -85,6 +91,13 @@ export default function BookingSelectProgramm({
           </SelectableButton>
         ))}
       </div>
+
+      {!canAffordAny && (
+        <p className="mt-3 text-sm text-terracotta">
+          Минут на балансе не хватает ни на одну программу. Баланс пополнится в
+          понедельник.
+        </p>
+      )}
 
       <div className="mt-10 flex justify-between">
         <BackButton onClick={onBack} />
