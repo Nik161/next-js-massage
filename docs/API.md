@@ -173,7 +173,8 @@ Returns `204` with no body.
 ```
 
 `date` is the start in salon local time, `YYYY-MM-DD HH:MI`.
-`status` is one of `booked`, `confirmed`, `canceled`, `completed`.
+`status` is one of `booked`, `confirmed`, `canceled`, `completed`. A confirmed
+booking is returned as `completed` once its session (start + duration) is over.
 
 ## Example: mobile client
 

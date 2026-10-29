@@ -1,7 +1,20 @@
 import { sql } from "@/app/lib/db";
+import { salonNow } from "@/app/lib/booking_time";
 import type { BookingResponse } from "@/app/lib/definitions";
 
 const ITEMS_PER_PAGE = 6;
+
+// A confirmed booking counts as completed once its session is over, so nobody
+// has to complete it by hand. The stored status stays "confirmed".
+function bookingStatus() {
+  return sql`
+    CASE
+      WHEN bookings.status = 'confirmed' AND bookings.ends_at <= ${salonNow()}
+        THEN 'completed'
+      ELSE bookings.status
+    END
+  `;
+}
 
 function bookingColumns() {
   return sql`
@@ -10,7 +23,7 @@ function bookingColumns() {
     bookings.massage_type,
     bookings.duration,
     bookings.user_id,
-    bookings.status,
+    ${bookingStatus()} AS status,
     bookings.is_social,
     bookings.therapist_id,
     users.name AS user_name,
@@ -34,7 +47,7 @@ function matchesQuery(query: string, ownerId: BookingsOwner) {
     ${ownedBy(ownerId)} AND (
       users.name ILIKE ${pattern} OR
       users.email ILIKE ${pattern} OR
-      bookings.status ILIKE ${pattern} OR
+      ${bookingStatus()} ILIKE ${pattern} OR
       bookings.massage_type ILIKE ${pattern} OR
       bookings.date::text ILIKE ${pattern} OR
       bookings.duration::text ILIKE ${pattern}
