@@ -3,9 +3,16 @@ import { z } from "zod";
 import { sql } from "@/app/lib/db";
 import { ApiError } from "@/app/lib/api/http";
 import { isSlotAvailable } from "@/app/lib/data/availability";
-import { toBookingDateTime } from "@/app/lib/booking_time";
+import { toBookingDateTime, toSlotTime } from "@/app/lib/booking_time";
 import { MASSAGE_DURATIONS } from "@/app/constants/massage_durations";
-import { sendBookingEmailToTherapist } from "@/app/lib/email/booking_email";
+import {
+  type BookingEmailData,
+  sendBookingConfirmedEmailToClient,
+  sendBookingCreatedEmailToClient,
+  sendBookingEmailToTherapist,
+  sendBookingUpdatedEmailToClient,
+  sendBookingUpdatedEmailToTherapist,
+} from "@/app/lib/email/booking_email";
 import type { ManualBookingStatus } from "@/app/lib/definitions";
 
 export const SLOT_TAKEN_MESSAGE = "Это время уже занято, выберите другое.";
@@ -77,17 +84,51 @@ function assertFound(rows: unknown[]) {
   if (rows.length === 0) throw new ApiError(404, "Booking not found");
 }
 
-// The email is a nice-to-have: a failure must not break the booking itself.
-async function notifyTherapist(booking: BookingInput) {
+// Who a booking email is about, read back right after the write.
+type BookingPeople = {
+  client_name: string;
+  client_email: string;
+  therapist_name: string | null;
+};
+
+// Selects the rows of the `changed` CTE together with their client and therapist.
+function withPeople() {
+  return sql`
+    SELECT
+      changed.*,
+      users.name AS client_name,
+      users.email AS client_email,
+      therapists.name AS therapist_name
+    FROM changed
+      JOIN users ON users.id = changed.user_id
+      LEFT JOIN therapists ON therapists.id = changed.therapist_id
+  `;
+}
+
+function toEmailData(
+  booking: BookingInput,
+  people: BookingPeople,
+): BookingEmailData {
+  return {
+    type: booking.massage_type,
+    duration: booking.duration,
+    date: booking.date,
+    time: booking.time,
+    clientName: people.client_name,
+    clientEmail: people.client_email,
+    therapistName: people.therapist_name,
+  };
+}
+
+// Emails are a nice-to-have: a failure must not break the booking itself.
+async function notify(
+  send: (booking: BookingEmailData) => Promise<unknown>,
+  booking: BookingEmailData,
+) {
   try {
-    await sendBookingEmailToTherapist({
-      type: booking.massage_type,
-      duration: booking.duration,
-      date: booking.date,
-      time: booking.time,
-    });
+    await send(booking);
   } catch (error) {
-    console.error("Failed to send booking email:", error);
+    console.error(`Failed to send booking email (${send.name}):`, error);
   }
 }
 
@@ -97,24 +138,32 @@ export async function createBooking(userId: string, booking: BookingInput) {
   const { startsAt, endsAt } = getBookingInterval(booking);
   const id = crypto.randomUUID();
 
-  await writeBooking(
-    () => sql`
-      INSERT INTO bookings (id, massage_type, duration, status, date, ends_at, is_social, user_id, therapist_id)
-      VALUES (
-        ${id},
-        ${booking.massage_type},
-        ${booking.duration},
-        ${"booked"},
-        ${startsAt},
-        ${endsAt},
-        ${true},
-        ${userId},
-        ${booking.therapist_id}
+  const rows = await writeBooking(
+    () => sql<BookingPeople[]>`
+      WITH changed AS (
+        INSERT INTO bookings (id, massage_type, duration, status, date, ends_at, is_social, user_id, therapist_id)
+        VALUES (
+          ${id},
+          ${booking.massage_type},
+          ${booking.duration},
+          ${"booked"},
+          ${startsAt},
+          ${endsAt},
+          ${true},
+          ${userId},
+          ${booking.therapist_id}
+        )
+        RETURNING user_id, therapist_id
       )
+      ${withPeople()}
     `,
   );
 
-  await notifyTherapist(booking);
+  const emailData = toEmailData(booking, rows[0]);
+  await Promise.all([
+    notify(sendBookingEmailToTherapist, emailData),
+    notify(sendBookingCreatedEmailToClient, emailData),
+  ]);
   return id;
 }
 
@@ -124,21 +173,28 @@ export async function updateBooking(id: string, booking: BookingInput) {
   const { startsAt, endsAt } = getBookingInterval(booking);
 
   const rows = await writeBooking(
-    () => sql`
-      UPDATE bookings
-      SET
-        massage_type = ${booking.massage_type},
-        duration = ${booking.duration},
-        date = ${startsAt},
-        ends_at = ${endsAt},
-        therapist_id = ${booking.therapist_id}
-      WHERE id = ${id}
-      RETURNING id
+    () => sql<BookingPeople[]>`
+      WITH changed AS (
+        UPDATE bookings
+        SET
+          massage_type = ${booking.massage_type},
+          duration = ${booking.duration},
+          date = ${startsAt},
+          ends_at = ${endsAt},
+          therapist_id = ${booking.therapist_id}
+        WHERE id = ${id}
+        RETURNING user_id, therapist_id
+      )
+      ${withPeople()}
     `,
   );
   assertFound(rows);
 
-  await notifyTherapist(booking);
+  const emailData = toEmailData(booking, rows[0]);
+  await Promise.all([
+    notify(sendBookingUpdatedEmailToTherapist, emailData),
+    notify(sendBookingUpdatedEmailToClient, emailData),
+  ]);
 }
 
 export async function deleteBooking(id: string) {
@@ -146,15 +202,37 @@ export async function deleteBooking(id: string) {
   assertFound(rows);
 }
 
+type StatusUpdateRow = BookingPeople & {
+  massage_type: string;
+  duration: number;
+  date: Date;
+};
+
 export async function setBookingStatus(
   id: string,
   status: ManualBookingStatus,
 ) {
-  const rows = await sql`
-    UPDATE bookings
-    SET status = ${status}
-    WHERE id = ${id}
-    RETURNING id
+  const rows = await sql<StatusUpdateRow[]>`
+    WITH changed AS (
+      UPDATE bookings
+      SET status = ${status}
+      WHERE id = ${id}
+      RETURNING user_id, therapist_id, massage_type, duration, date
+    )
+    ${withPeople()}
   `;
   assertFound(rows);
+
+  if (status === "confirmed") {
+    const [row] = rows;
+    await notify(sendBookingConfirmedEmailToClient, {
+      type: row.massage_type,
+      duration: row.duration,
+      date: row.date.toISOString().slice(0, 10),
+      time: toSlotTime(row.date),
+      clientName: row.client_name,
+      clientEmail: row.client_email,
+      therapistName: row.therapist_name,
+    });
+  }
 }

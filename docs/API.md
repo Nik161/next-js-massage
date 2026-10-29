@@ -119,7 +119,7 @@ Six bookings per page, newest first.
 ### `POST /api/bookings`
 
 Signed in. Creates a booking for the current user with status `booked` and
-emails the therapist. Returns `201 { "booking": Booking }`.
+emails the therapist and the client. Returns `201 { "booking": Booking }`.
 
 ```json
 {
@@ -141,7 +141,7 @@ Signed in. Returns `{ "booking": Booking }`. Users can only open their own.
 ### `PUT /api/bookings/:id`
 
 Admin. Replaces the booking's details; same body as `POST /api/bookings`.
-Returns `{ "booking": Booking }`.
+Emails the therapist and the client. Returns `{ "booking": Booking }`.
 
 ### `DELETE /api/bookings/:id`
 
@@ -150,6 +150,7 @@ Admin. Returns `204` with no body.
 ### `PATCH /api/bookings/:id/status`
 
 Admin. Body `{ "status": "confirmed" }` or `{ "status": "completed" }`.
+Confirming a booking emails the client.
 Returns `204` with no body.
 
 ## The `Booking` object

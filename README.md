@@ -53,7 +53,7 @@ pnpm test:coverage  # with a coverage report in ./coverage
 
 Tests live in `tests/unit`: business logic (`lib`), the API route handlers (`api`)
 and client components (`ui`, rendered with React Testing Library in jsdom).
-The database, Auth.js and Resend are mocked, so no services are needed.
+The database, Auth.js and the mailer are mocked, so no services are needed.
 
 ### End-to-end tests (Playwright)
 
