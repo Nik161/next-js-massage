@@ -42,6 +42,7 @@ Every error has the same shape:
 | Status | Meaning                                              |
 | ------ | ---------------------------------------------------- |
 | 400    | Invalid JSON, query or body (see `fieldErrors`)      |
+|        | or not enough minutes on the client's balance        |
 | 401    | Not signed in, wrong credentials or invalid token    |
 | 403    | Signed in, but the action is admin only              |
 | 404    | Booking does not exist or is not visible to the user |
@@ -78,7 +79,8 @@ Content-Type: application/json
 
 ### `GET /api/me`
 
-Signed in. Returns `{ "user": { id, name, email, role } }`.
+Signed in. Returns `{ "user": { id, name, email, role, balance } }`, where
+`balance` is the minutes left for bookings this week.
 
 ### `GET /api/therapists`
 
@@ -134,6 +136,9 @@ emails the therapist and the client. Returns `201 { "booking": Booking }`.
 The time must be one of the free slots from `/api/massage_slots`,
 otherwise the response is `409`.
 
+The session's `duration` is taken off the user's minute balance. Without
+enough minutes the response is `400` and nothing is booked.
+
 ### `GET /api/bookings/:id`
 
 Signed in. Returns `{ "booking": Booking }`. Users can only open their own.
@@ -142,16 +147,25 @@ Signed in. Returns `{ "booking": Booking }`. Users can only open their own.
 
 Admin. Replaces the booking's details; same body as `POST /api/bookings`.
 Emails the therapist and the client. Returns `{ "booking": Booking }`.
+A changed `duration` charges or refunds the difference on the client's balance
+(`400` if the client lacks the extra minutes).
 
 ### `DELETE /api/bookings/:id`
 
-Admin. Returns `204` with no body.
+Admin. Returns `204` with no body. If the session has not started yet,
+its minutes go back to the client's balance.
 
 ### `PATCH /api/bookings/:id/status`
 
 Admin. Body `{ "status": "confirmed" }` or `{ "status": "completed" }`.
 Confirming a booking emails the client.
 Returns `204` with no body.
+
+### `GET /api/cron/weekly-balance`
+
+Called by Vercel Cron every Monday at 00:00 salon time (`vercel.json`) with
+`Authorization: Bearer $CRON_SECRET`. Sets every user's `balance` to their
+`weekly_balance` (users without one are skipped). Returns `{ "updated": 3 }`.
 
 ## The `Booking` object
 

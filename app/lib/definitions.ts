@@ -39,6 +39,8 @@ export type User = {
   email: string;
   password: string;
   role: "user" | "admin";
+  // Minutes left for bookings this week
+  balance: number;
 };
 
 export type Therapist = {

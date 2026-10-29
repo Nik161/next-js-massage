@@ -20,6 +20,7 @@ export default async function Page(props: PageProps<"/bookings/create">) {
     <div className="relative z-10 mx-auto -mt-12 w-full max-w-6xl px-4 pb-16">
       <CreateOrEditBookingForm
         userName={user?.name || user?.email || ""}
+        balance={user?.balance}
         therapists={therapists}
         // Preselected from "Записаться к мастеру" on the landing page
         initialTherapistId={therapists.find((t) => t.id === therapist)?.id}

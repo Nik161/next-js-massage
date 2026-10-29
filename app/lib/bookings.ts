@@ -3,7 +3,12 @@ import { z } from "zod";
 import { sql } from "@/app/lib/db";
 import { ApiError } from "@/app/lib/api/http";
 import { isSlotAvailable } from "@/app/lib/data/availability";
-import { toBookingDateTime, toSlotTime } from "@/app/lib/booking_time";
+import {
+  salonNow,
+  toBookingDateTime,
+  toSlotTime,
+} from "@/app/lib/booking_time";
+import { chargeMinutes } from "@/app/lib/balance";
 import { MASSAGE_DURATIONS } from "@/app/constants/massage_durations";
 import {
   type BookingEmailData,
@@ -13,7 +18,7 @@ import {
   sendBookingUpdatedEmailToClient,
   sendBookingUpdatedEmailToTherapist,
 } from "@/app/lib/email/booking_email";
-import type { ManualBookingStatus } from "@/app/lib/definitions";
+import type { BookingStatus, ManualBookingStatus } from "@/app/lib/definitions";
 
 export const SLOT_TAKEN_MESSAGE = "Это время уже занято, выберите другое.";
 
@@ -84,6 +89,13 @@ function assertFound(rows: unknown[]) {
   if (rows.length === 0) throw new ApiError(404, "Booking not found");
 }
 
+// What a booking costs and whom, for balance changes
+type BalanceRow = {
+  user_id: string;
+  duration: number;
+  status: BookingStatus;
+};
+
 // Who a booking email is about, read back right after the write.
 type BookingPeople = {
   client_name: string;
@@ -138,25 +150,29 @@ export async function createBooking(userId: string, booking: BookingInput) {
   const { startsAt, endsAt } = getBookingInterval(booking);
   const id = crypto.randomUUID();
 
-  const rows = await writeBooking(
-    () => sql<BookingPeople[]>`
-      WITH changed AS (
-        INSERT INTO bookings (id, massage_type, duration, status, date, ends_at, is_social, user_id, therapist_id)
-        VALUES (
-          ${id},
-          ${booking.massage_type},
-          ${booking.duration},
-          ${"booked"},
-          ${startsAt},
-          ${endsAt},
-          ${true},
-          ${userId},
-          ${booking.therapist_id}
+  const rows = await writeBooking(() =>
+    sql.begin(async (tx) => {
+      await chargeMinutes(tx, userId, booking.duration);
+
+      return tx<BookingPeople[]>`
+        WITH changed AS (
+          INSERT INTO bookings (id, massage_type, duration, status, date, ends_at, is_social, user_id, therapist_id)
+          VALUES (
+            ${id},
+            ${booking.massage_type},
+            ${booking.duration},
+            ${"booked"},
+            ${startsAt},
+            ${endsAt},
+            ${true},
+            ${userId},
+            ${booking.therapist_id}
+          )
+          RETURNING user_id, therapist_id
         )
-        RETURNING user_id, therapist_id
-      )
-      ${withPeople()}
-    `,
+        ${withPeople()}
+      `;
+    }),
   );
 
   const emailData = toEmailData(booking, rows[0]);
@@ -172,23 +188,38 @@ export async function updateBooking(id: string, booking: BookingInput) {
 
   const { startsAt, endsAt } = getBookingInterval(booking);
 
-  const rows = await writeBooking(
-    () => sql<BookingPeople[]>`
-      WITH changed AS (
-        UPDATE bookings
-        SET
-          massage_type = ${booking.massage_type},
-          duration = ${booking.duration},
-          date = ${startsAt},
-          ends_at = ${endsAt},
-          therapist_id = ${booking.therapist_id}
+  const rows = await writeBooking(() =>
+    sql.begin(async (tx) => {
+      const previous = await tx<BalanceRow[]>`
+        SELECT user_id, duration, status
+        FROM bookings
         WHERE id = ${id}
-        RETURNING user_id, therapist_id
-      )
-      ${withPeople()}
-    `,
+        FOR UPDATE
+      `;
+      assertFound(previous);
+
+      // Only the difference is charged (or given back) when the program changes.
+      const [{ user_id, duration, status }] = previous;
+      if (status !== "canceled") {
+        await chargeMinutes(tx, user_id, booking.duration - duration);
+      }
+
+      return tx<BookingPeople[]>`
+        WITH changed AS (
+          UPDATE bookings
+          SET
+            massage_type = ${booking.massage_type},
+            duration = ${booking.duration},
+            date = ${startsAt},
+            ends_at = ${endsAt},
+            therapist_id = ${booking.therapist_id}
+          WHERE id = ${id}
+          RETURNING user_id, therapist_id
+        )
+        ${withPeople()}
+      `;
+    }),
   );
-  assertFound(rows);
 
   const emailData = toEmailData(booking, rows[0]);
   await Promise.all([
@@ -198,8 +229,20 @@ export async function updateBooking(id: string, booking: BookingInput) {
 }
 
 export async function deleteBooking(id: string) {
-  const rows = await sql`DELETE FROM bookings WHERE id = ${id} RETURNING id`;
-  assertFound(rows);
+  await sql.begin(async (tx) => {
+    const rows = await tx<(BalanceRow & { date: Date })[]>`
+      DELETE FROM bookings
+      WHERE id = ${id}
+      RETURNING user_id, duration, status, date
+    `;
+    assertFound(rows);
+
+    // Minutes come back only for a session that has not started yet.
+    const [{ user_id, duration, status, date }] = rows;
+    if (status !== "canceled" && date > salonNow()) {
+      await chargeMinutes(tx, user_id, -duration);
+    }
+  });
 }
 
 type StatusUpdateRow = BookingPeople & {

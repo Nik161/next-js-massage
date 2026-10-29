@@ -17,7 +17,8 @@ export async function getUserById(id: string): Promise<User | undefined> {
       id,
       name,
       email,
-      role
+      role,
+      COALESCE(balance, 0) AS balance
     FROM users
     WHERE id = ${id}
   `;

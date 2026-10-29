@@ -2,6 +2,7 @@ import { ClockIcon } from "@heroicons/react/24/outline";
 import { MASSAGE_DURATIONS } from "@/app/constants/massage_durations";
 import type { MassageType } from "@/app/lib/definitions";
 import SelectableButton from "@/app/ui/booking/selectable_button";
+import BalanceBadge from "@/app/ui/booking/balance_badge";
 import {
   BackButton,
   NextButton,
@@ -13,6 +14,7 @@ export default function BookingSelectProgramm({
   massageTypes,
   selectedMassage,
   selectedDuration,
+  balance,
   onMassageChange,
   onDurationChange,
   onBack,
@@ -21,6 +23,7 @@ export default function BookingSelectProgramm({
   massageTypes: MassageType[];
   selectedMassage: string;
   selectedDuration: number;
+  balance?: number;
   onMassageChange: (massageTypeId: string) => void;
   onDurationChange: (duration: number) => void;
   onBack: () => void;
@@ -56,10 +59,13 @@ export default function BookingSelectProgramm({
         ))}
       </div>
 
-      <h3 className="mt-10 flex items-center gap-2 text-sm font-medium uppercase tracking-[0.15em] text-muted">
-        <ClockIcon className="size-4" />
-        Продолжительность
-      </h3>
+      <div className="mt-10 flex flex-wrap items-center justify-between gap-3">
+        <h3 className="flex items-center gap-2 text-sm font-medium uppercase tracking-[0.15em] text-muted">
+          <ClockIcon className="size-4" />
+          Продолжительность
+        </h3>
+        {balance !== undefined && <BalanceBadge minutes={balance} />}
+      </div>
 
       <div className="mt-3 grid grid-cols-3 gap-3">
         {MASSAGE_DURATIONS.map((duration) => (

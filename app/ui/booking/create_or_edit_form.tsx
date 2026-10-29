@@ -87,12 +87,15 @@ function getInitialSelection(
 
 export default function CreateOrEditBookingForm({
   userName,
+  balance,
   booking,
   therapists,
   massageTypes,
   initialTherapistId,
 }: {
   userName: string;
+  // The signed-in user's minutes; only shown when creating a booking for them
+  balance?: number;
   booking?: BookingResponse;
   therapists: Therapist[];
   initialTherapistId?: string;
@@ -199,6 +202,7 @@ export default function CreateOrEditBookingForm({
               massageTypes={massageTypes}
               selectedMassage={selection.massageType}
               selectedDuration={selection.duration}
+              balance={balance}
               onMassageChange={(massageType) =>
                 updateSelection({ massageType })
               }
