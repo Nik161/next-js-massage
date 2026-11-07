@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import clsx from "clsx";
 import { cormorant } from "@/app/ui/fonts";
@@ -8,29 +8,62 @@ import { NAV_LINKS } from "@/app/constants/navigation";
 import MassageName from "@/app/ui/shared/massage_name";
 import LogoutButton from "@/app/ui/shared/logoutButton";
 import { Leaf, PalmFrond } from "@/app/ui/motion/decor";
+import {
+  useAppDispatch,
+  useAppSelector,
+  useAppStore,
+} from "@/app/lib/store/hooks";
+import { selectIsLoggedIn } from "@/app/lib/store/user_slice";
+import {
+  headerScrolled,
+  mobileMenuClosed,
+  mobileMenuToggled,
+  selectIsHeaderHidden,
+  selectIsHeaderScrolled,
+  selectIsMobileMenuOpen,
+} from "@/app/lib/store/ui_slice";
 
-type HeaderClientProps = {
-  isLoggedIn: boolean;
-};
-
-export default function HeaderClient({ isLoggedIn }: HeaderClientProps) {
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [isHidden, setIsHidden] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+export default function HeaderClient() {
+  const isLoggedIn = useAppSelector(selectIsLoggedIn);
+  const isScrolled = useAppSelector(selectIsHeaderScrolled);
+  const isHidden = useAppSelector(selectIsHeaderHidden);
+  const isMenuOpen = useAppSelector(selectIsMobileMenuOpen);
+  const dispatch = useAppDispatch();
+  const store = useAppStore();
+  // Only needed to compare with the next event, never rendered
   const lastScrollY = useRef(0);
 
   // Solid background after a bit of scrolling; hide while scrolling down.
   useEffect(() => {
     const onScroll = () => {
       const y = window.scrollY;
-      setIsScrolled(y > 40);
-      setIsHidden(y > 400 && y > lastScrollY.current);
+      const next = {
+        isScrolled: y > 40,
+        isHidden: y > 400 && y > lastScrollY.current,
+      };
       lastScrollY.current = y;
+
+      // Scroll fires constantly; dispatch only when the header must change.
+      const ui = store.getState().ui;
+      if (
+        ui.isHeaderScrolled !== next.isScrolled ||
+        ui.isHeaderHidden !== next.isHidden
+      ) {
+        dispatch(headerScrolled(next));
+      }
     };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  }, [dispatch, store]);
+
+  // The store outlives the page, so a menu left open (e.g. by the browser's
+  // back button) must not greet the next page.
+  useEffect(() => {
+    return () => {
+      dispatch(mobileMenuClosed());
+    };
+  }, [dispatch]);
 
   useEffect(() => {
     document.body.style.overflow = isMenuOpen ? "hidden" : "";
@@ -39,7 +72,7 @@ export default function HeaderClient({ isLoggedIn }: HeaderClientProps) {
     };
   }, [isMenuOpen]);
 
-  const closeMenu = () => setIsMenuOpen(false);
+  const closeMenu = () => dispatch(mobileMenuClosed());
 
   return (
     <>
@@ -101,7 +134,7 @@ export default function HeaderClient({ isLoggedIn }: HeaderClientProps) {
 
           {/* Burger */}
           <button
-            onClick={() => setIsMenuOpen((open) => !open)}
+            onClick={() => dispatch(mobileMenuToggled())}
             className="relative z-50 flex size-11 flex-col items-center justify-center gap-1.5 md:hidden"
             aria-label="Меню"
             aria-controls="mobile-menu"

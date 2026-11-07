@@ -9,6 +9,7 @@ import Services from "@/app/ui/main_page/services";
 import Philosophy from "@/app/ui/main_page/philosophy";
 import Process from "@/app/ui/main_page/process";
 import Masters from "@/app/ui/main_page/masters";
+import Gallery from "@/app/ui/main_page/gallery";
 import Banner from "@/app/ui/main_page/banner";
 
 export default function HomePage() {
@@ -27,6 +28,7 @@ export default function HomePage() {
           <Philosophy />
           <Process />
           <Masters />
+          <Gallery />
           <Banner />
         </main>
         <Footer />

@@ -10,7 +10,8 @@ export const metadata: Metadata = {
 
 export default async function Page(props: PageProps<"/bookings/create">) {
   const { therapist } = await props.searchParams;
-  const [user, therapists, massageTypes] = await Promise.all([
+  // The user itself reaches the form through the store (see Header)
+  const [, therapists, massageTypes] = await Promise.all([
     requireCurrentUser(),
     getTherapists(),
     getMassageTypes(),
@@ -19,8 +20,6 @@ export default async function Page(props: PageProps<"/bookings/create">) {
   return (
     <div className="relative z-10 mx-auto -mt-12 w-full max-w-6xl px-4 pb-16">
       <CreateOrEditBookingForm
-        userName={user.name || user.email}
-        balance={user.balance}
         therapists={therapists}
         // Preselected from "Записаться к мастеру" on the landing page
         initialTherapistId={therapists.find((t) => t.id === therapist)?.id}

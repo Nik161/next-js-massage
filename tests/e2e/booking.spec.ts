@@ -77,7 +77,8 @@ test("reloads slots when another day is picked", async ({ page }) => {
 // Creates a real booking on the last bookable day and deletes it afterwards
 test("creates a booking end to end", async ({ page }) => {
   test.skip(
-    !process.env.E2E_ALLOW_WRITES,
+    // Only "1" opts in, so E2E_ALLOW_WRITES=0 really means no writes
+    process.env.E2E_ALLOW_WRITES !== "1",
     "set E2E_ALLOW_WRITES=1 to write to the database",
   );
 

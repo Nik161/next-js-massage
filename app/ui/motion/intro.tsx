@@ -1,23 +1,41 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import { cormorant } from "@/app/ui/fonts";
 import { INTRO_STORAGE_KEY } from "@/app/ui/motion/intro-skip";
+import {
+  useAppDispatch,
+  useAppSelector,
+  useAppStore,
+} from "@/app/lib/store/hooks";
+import {
+  introHidden,
+  introStarted,
+  selectIsIntroShown,
+} from "@/app/lib/store/ui_slice";
 
 const INTRO_MS = 2600;
-
-// Survives client-side navigation, so the curtain only plays on a full load.
-let hasPlayed = false;
 
 const LETTERS = "Niko·Massage".split("");
 
 // Opening curtain with the logo; it slides away and reveals the page.
 export default function Intro() {
-  const [isShown, setIsShown] = useState(() => !hasPlayed);
+  const store = useAppStore();
+  const dispatch = useAppDispatch();
+
+  // Back on the landing page after leaving mid-curtain: don't play it again.
+  // Runs before the first read, and Intro renders before anything else.
+  const isChecked = useRef<true | null>(null);
+  if (isChecked.current == null) {
+    if (store.getState().ui.hasIntroPlayed) store.dispatch(introHidden());
+    isChecked.current = true;
+  }
+
+  const isShown = useAppSelector(selectIsIntroShown);
 
   useEffect(() => {
     if (!isShown) return;
-    hasPlayed = true;
+    dispatch(introStarted());
 
     const root = document.documentElement;
     const skipped = root.dataset.introSeen !== undefined;
@@ -27,19 +45,19 @@ export default function Intro() {
 
     if (skipped) return;
     root.style.overflow = "hidden";
-    const timer = setTimeout(() => setIsShown(false), INTRO_MS);
+    const timer = setTimeout(() => dispatch(introHidden()), INTRO_MS);
     return () => {
       clearTimeout(timer);
       root.style.overflow = "";
     };
-  }, [isShown]);
+  }, [isShown, dispatch]);
 
   if (!isShown) return null;
 
   return (
     <div
       aria-hidden="true"
-      onClick={() => setIsShown(false)}
+      onClick={() => dispatch(introHidden())}
       className="intro grain fixed inset-0 z-[100] flex flex-col items-center justify-center bg-forest text-cream"
     >
       <div

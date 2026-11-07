@@ -2,137 +2,95 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useActionState, useRef, useState } from "react";
+import { useRef } from "react";
 import {
   ArrowLeftIcon,
   ExclamationCircleIcon,
 } from "@heroicons/react/24/outline";
 import type {
-  BookingFormState,
   BookingResponse,
   MassageType,
   Therapist,
 } from "@/app/lib/definitions";
-import type { BookingInput } from "@/app/lib/bookings";
-import {
-  ApiRequestError,
-  createBooking,
-  updateBooking,
-} from "@/app/lib/api_client";
-import { getToday } from "@/app/lib/booking_time";
 import BookingProgress from "@/app/ui/booking/booking_progress";
 import BookingSelectTherapist from "@/app/ui/booking/booking_select_therapist";
 import BookingSelectDateAndTime from "@/app/ui/booking/booking_select_date_time";
 import BookingSelectProgramm from "@/app/ui/booking/booking_select_programm";
 import BookingSummary from "@/app/ui/booking/booking_summary";
 import { useAvailableSlots } from "@/app/ui/booking/use_available_slots";
-
-type BookingSelection = {
-  therapistId: string;
-  date: string;
-  time: string;
-  massageType: string;
-  duration: number;
-};
-
-const initialState: BookingFormState = { message: null, errors: {} };
-
-const NETWORK_ERROR_MESSAGE =
-  "Не удалось отправить запрос. Попробуйте ещё раз.";
-
-function readBookingInput(formData: FormData): BookingInput {
-  return {
-    therapist_id: String(formData.get("therapist_id") ?? ""),
-    date: String(formData.get("booking_date") ?? ""),
-    time: String(formData.get("booking_time") ?? ""),
-    massage_type: String(formData.get("massage_type") ?? ""),
-    duration: Number(formData.get("booking_duration")),
-  };
-}
-
-function toFormState(error: unknown): BookingFormState {
-  if (error instanceof ApiRequestError) {
-    return {
-      message: error.body.error,
-      errors: error.body.fieldErrors ?? {},
-    };
-  }
-  console.error("Failed to save booking:", error);
-  return { message: NETWORK_ERROR_MESSAGE, errors: {} };
-}
-
-function getInitialSelection(
-  booking?: BookingResponse,
-  initialTherapistId = "",
-): BookingSelection {
-  if (!booking) {
-    return {
-      therapistId: initialTherapistId,
-      date: getToday(),
-      time: "",
-      massageType: "",
-      duration: 0,
-    };
-  }
-
-  const [date, time] = booking.date.split(" ");
-  return {
-    therapistId: booking.therapist_id,
-    date,
-    time,
-    massageType: booking.massage_type,
-    duration: booking.duration,
-  };
-}
+import {
+  useAppDispatch,
+  useAppSelector,
+  useAppStore,
+} from "@/app/lib/store/hooks";
+import {
+  bookingFormStarted,
+  dateSelected,
+  durationSelected,
+  getInitialSelection,
+  massageTypeSelected,
+  selectCanSubmit,
+  selectDirection,
+  selectIsSubmitting,
+  selectSelection,
+  selectStep,
+  selectSubmitResult,
+  stepChanged,
+  submitBooking,
+  therapistSelected,
+  timeSelected,
+} from "@/app/lib/store/booking_form_slice";
+import { selectBalance, selectUserName } from "@/app/lib/store/user_slice";
 
 export default function CreateOrEditBookingForm({
-  userName,
-  balance,
   booking,
   therapists,
   massageTypes,
   initialTherapistId,
 }: {
-  userName: string;
-  // The signed-in user's minutes; only shown when creating a booking for them
-  balance?: number;
   booking?: BookingResponse;
   therapists: Therapist[];
   initialTherapistId?: string;
   massageTypes: MassageType[];
 }) {
-  const [step, setStep] = useState(1);
-  // Decides which side the next step slides in from
-  const [direction, setDirection] = useState<"forward" | "back">("forward");
-  const [selection, setSelection] = useState(() =>
-    getInitialSelection(booking, initialTherapistId),
-  );
+  // Reset the form state before the first read, so the server render and
+  // hydration already show this booking (or a fresh form).
+  const store = useAppStore();
+  const isStarted = useRef<true | null>(null);
+  if (isStarted.current == null) {
+    store.dispatch(
+      bookingFormStarted(getInitialSelection(booking, initialTherapistId)),
+    );
+    isStarted.current = true;
+  }
+
+  const dispatch = useAppDispatch();
+  const step = useAppSelector(selectStep);
+  const direction = useAppSelector(selectDirection);
+  const selection = useAppSelector(selectSelection);
+  const canSubmit = useAppSelector(selectCanSubmit);
+  const userName = useAppSelector(selectUserName);
+  // The signed-in user's minutes; only shown when creating a booking for them
+  const userBalance = useAppSelector(selectBalance);
+  const balance = booking ? undefined : userBalance;
   const cardRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  const [state, formAction, isPending] = useActionState(
-    async (_prevState: BookingFormState, formData: FormData) => {
-      const input = readBookingInput(formData);
-      try {
-        if (booking) await updateBooking(booking.id, input);
-        else await createBooking(input);
-      } catch (error) {
-        return toFormState(error);
-      }
+  const state = useAppSelector(selectSubmitResult);
+  const isPending = useAppSelector(selectIsSubmitting);
 
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!canSubmit || isPending) return;
+    const result = await dispatch(submitBooking({ bookingId: booking?.id }));
+    if (submitBooking.fulfilled.match(result)) {
       router.push("/bookings");
       router.refresh();
-      return initialState;
-    },
-    initialState,
-  );
-
-  const updateSelection = (patch: Partial<BookingSelection>) =>
-    setSelection((prev) => ({ ...prev, ...patch }));
+    }
+  };
 
   const goToStep = (nextStep: number) => {
-    setDirection(nextStep > step ? "forward" : "back");
-    setStep(nextStep);
+    dispatch(stepChanged(nextStep));
 
     // On small screens the card top may be scrolled away
     const card = cardRef.current;
@@ -148,23 +106,15 @@ export default function CreateOrEditBookingForm({
     excludeBookingId: booking?.id,
   });
 
-  const canSubmit = Boolean(
-    selection.therapistId &&
-    selection.date &&
-    selection.time &&
-    selection.massageType &&
-    selection.duration,
-  );
-
   const therapist = therapists.find((t) => t.id === selection.therapistId);
   const massage = massageTypes.find((m) => m.id === selection.massageType);
 
   return (
     <form
-      action={formAction}
+      onSubmit={handleSubmit}
       className="grid w-full items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]"
     >
-      {/* Values sent to the bookings API */}
+      {/* The submitted values, also readable without the store */}
       <input type="hidden" name="therapist_id" value={selection.therapistId} />
       <input type="hidden" name="booking_date" value={selection.date} />
       <input type="hidden" name="booking_time" value={selection.time} />
@@ -189,9 +139,8 @@ export default function CreateOrEditBookingForm({
             <BookingSelectTherapist
               therapists={therapists}
               selectedTherapist={selection.therapistId}
-              // Free slots depend on the therapist, so the chosen time is reset.
               onSelect={(therapistId) =>
-                updateSelection({ therapistId, time: "" })
+                dispatch(therapistSelected(therapistId))
               }
               onNext={() => goToStep(2)}
             />
@@ -204,11 +153,10 @@ export default function CreateOrEditBookingForm({
               selectedDuration={selection.duration}
               balance={balance}
               onMassageChange={(massageType) =>
-                updateSelection({ massageType })
+                dispatch(massageTypeSelected(massageType))
               }
-              // A longer session may not fit into the chosen time.
               onDurationChange={(duration) =>
-                updateSelection({ duration, time: "" })
+                dispatch(durationSelected(duration))
               }
               onBack={() => goToStep(1)}
               onNext={() => goToStep(3)}
@@ -222,8 +170,8 @@ export default function CreateOrEditBookingForm({
               slots={slots}
               isLoading={isLoading}
               isError={isError}
-              onDateChange={(date) => updateSelection({ date, time: "" })}
-              onTimeChange={(time) => updateSelection({ time })}
+              onDateChange={(date) => dispatch(dateSelected(date))}
+              onTimeChange={(time) => dispatch(timeSelected(time))}
               onBack={() => goToStep(2)}
               canSubmit={canSubmit && !isPending}
               isSubmitting={isPending}

@@ -4,16 +4,32 @@ import userEvent from "@testing-library/user-event";
 import type { BookingResponse } from "@/app/lib/definitions";
 
 vi.mock("@/app/lib/api_client", () => ({
-  ApiRequestError: class extends Error {},
+  ApiRequestError: class extends Error {
+    constructor(
+      public status: number,
+      public body: { error: string; fieldErrors?: object },
+    ) {
+      super(body.error);
+    }
+  },
   createBooking: vi.fn(),
   updateBooking: vi.fn(),
 }));
-vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
-}));
+const router = vi.hoisted(() => ({ push: vi.fn(), refresh: vi.fn() }));
+vi.mock("next/navigation", () => ({ useRouter: () => router }));
 
 import CreateOrEditBookingForm from "@/app/ui/booking/create_or_edit_form";
 import { getToday } from "@/app/lib/booking_time";
+import {
+  ApiRequestError,
+  createBooking,
+  updateBooking,
+} from "@/app/lib/api_client";
+import {
+  makeTestStore,
+  storeWrapper,
+  TEST_USER,
+} from "@/tests/unit/helpers/store";
 
 const THERAPISTS = [
   { id: "t-niko", name: "Нико", description: "Описание Нико", image_url: null },
@@ -24,18 +40,21 @@ const MASSAGE_TYPES = [
   { id: "relax", name: "Релакс", description: "" },
 ];
 
+const TEST_USER_NO_NAME = { ...TEST_USER, name: "" };
+
 const fetchMock = vi.fn();
 
 function renderForm(
   props: Partial<Parameters<typeof CreateOrEditBookingForm>[0]> = {},
+  store = makeTestStore(),
 ) {
   const view = render(
     <CreateOrEditBookingForm
-      userName="Анна"
       therapists={THERAPISTS}
       massageTypes={MASSAGE_TYPES}
       {...props}
     />,
+    { wrapper: storeWrapper(store) },
   );
   const hidden = (name: string) =>
     view.container.querySelector<HTMLInputElement>(`input[name="${name}"]`)!
@@ -48,6 +67,8 @@ const next = () =>
 
 describe("CreateOrEditBookingForm", () => {
   beforeEach(() => {
+    router.push.mockClear();
+    router.refresh.mockClear();
     fetchMock.mockReset();
     // A fresh Response per call: a body can only be read once
     fetchMock.mockImplementation(
@@ -108,6 +129,31 @@ describe("CreateOrEditBookingForm", () => {
     expect(within(summary).getByText("Анна")).toBeInTheDocument();
   });
 
+  it("falls back to the email when the user has no name", () => {
+    renderForm({}, makeTestStore({ ...TEST_USER_NO_NAME }));
+    const summary = screen.getByRole("complementary");
+    expect(within(summary).getByText("anna@example.com")).toBeInTheDocument();
+  });
+
+  it("shows the user's balance only when creating", async () => {
+    const booking = {
+      id: "b-1",
+      date: "2026-10-22 18:00",
+      therapist_id: "t-bratik",
+      massage_type: "relax",
+      duration: 90,
+    } as BookingResponse;
+
+    const { unmount } = renderForm({ initialTherapistId: "t-niko" });
+    await next();
+    expect(screen.getByText(/120/)).toBeInTheDocument();
+    unmount();
+
+    renderForm({ booking });
+    await next();
+    expect(screen.queryByText(/120/)).not.toBeInTheDocument();
+  });
+
   it("resets the chosen time when the duration changes", async () => {
     const { hidden } = renderForm({ initialTherapistId: "t-niko" });
     await next();
@@ -153,6 +199,34 @@ describe("CreateOrEditBookingForm", () => {
     expect(fetchMock.mock.calls[0][0]).toContain("excludeBookingId=b-1");
   });
 
+  it("starts over when the form is opened again", async () => {
+    const wrapper = storeWrapper();
+    const first = render(
+      <CreateOrEditBookingForm
+        therapists={THERAPISTS}
+        massageTypes={MASSAGE_TYPES}
+      />,
+      { wrapper },
+    );
+    await userEvent.click(screen.getByRole("button", { name: /Нико/ }));
+    await next();
+    first.unmount();
+
+    const second = render(
+      <CreateOrEditBookingForm
+        therapists={THERAPISTS}
+        massageTypes={MASSAGE_TYPES}
+      />,
+      { wrapper },
+    );
+    expect(
+      second.container.querySelector<HTMLInputElement>(
+        'input[name="therapist_id"]',
+      )!.value,
+    ).toBe("");
+    expect(screen.getByRole("button", { name: /Далее/ })).toBeDisabled();
+  });
+
   it("shows a friendly message when slots cannot be loaded", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     fetchMock.mockImplementation(
@@ -167,5 +241,64 @@ describe("CreateOrEditBookingForm", () => {
     expect(
       await screen.findByText(/Не удалось загрузить свободное время/),
     ).toBeInTheDocument();
+  });
+
+  describe("submitting", () => {
+    const booking = {
+      id: "b-1",
+      date: "2026-10-22 18:00",
+      therapist_id: "t-bratik",
+      massage_type: "relax",
+      duration: 90,
+    } as BookingResponse;
+
+    async function submit() {
+      await next();
+      await next();
+      await userEvent.click(
+        await screen.findByRole("button", { name: "Сохранить изменения" }),
+      );
+    }
+
+    it("saves the booking and goes back to the list", async () => {
+      vi.mocked(updateBooking).mockResolvedValue({ booking });
+      renderForm({ booking });
+      await submit();
+
+      expect(updateBooking).toHaveBeenCalledWith("b-1", {
+        therapist_id: "t-bratik",
+        date: "2026-10-22",
+        time: "18:00",
+        massage_type: "relax",
+        duration: 90,
+      });
+      expect(createBooking).not.toHaveBeenCalled();
+      expect(router.push).toHaveBeenCalledWith("/bookings");
+      expect(router.refresh).toHaveBeenCalled();
+    });
+
+    it("shows the error the API reports and stays on the page", async () => {
+      vi.mocked(updateBooking).mockRejectedValue(
+        new ApiRequestError(409, { error: "Это время уже занято." }),
+      );
+      renderForm({ booking });
+      await submit();
+
+      expect(
+        await screen.findByText("Это время уже занято."),
+      ).toBeInTheDocument();
+      expect(router.push).not.toHaveBeenCalled();
+    });
+
+    it("shows a generic message when the request fails", async () => {
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      vi.mocked(updateBooking).mockRejectedValue(new TypeError("offline"));
+      renderForm({ booking });
+      await submit();
+
+      expect(
+        await screen.findByText(/Не удалось отправить запрос/),
+      ).toBeInTheDocument();
+    });
   });
 });

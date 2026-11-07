@@ -6,11 +6,22 @@ import {
   ExclamationCircleIcon,
 } from "@heroicons/react/24/outline";
 import { ArrowRightIcon } from "@heroicons/react/20/solid";
-import { useActionState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/app/ui/shared/button";
 import Spinner from "@/app/ui/shared/spinner";
+import { navigateWithReload } from "@/app/lib/navigation";
+import {
+  useAppDispatch,
+  useAppSelector,
+  useAppStore,
+} from "@/app/lib/store/hooks";
+import {
+  logIn,
+  loginFormOpened,
+  selectIsLoggingIn,
+  selectLoginError,
+} from "@/app/lib/store/user_slice";
 
 function Field({
   id,
@@ -43,48 +54,41 @@ function Field({
   );
 }
 
-// Goes through NextAuth's own credentials endpoint, which sets the session cookie.
-async function authenticate(
-  formData: FormData,
-  callbackUrl: string,
-): Promise<{ url: string } | { error: string }> {
-  try {
-    const result = await signIn("credentials", {
-      email: formData.get("email"),
-      password: formData.get("password"),
-      redirectTo: callbackUrl,
-      redirect: false,
-    });
-    if (result?.error === "CredentialsSignin") {
-      return { error: "Invalid credentials." };
-    }
-    // On success NextAuth returns the callback URL, checked to be on our origin.
-    if (result?.url) return { url: result.url };
-  } catch (error) {
-    console.error("Sign-in failed:", error);
-  }
-  return { error: "Something went wrong." };
-}
-
 export default function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/bookings";
-  const [errorMessage, formAction, isPending] = useActionState(
-    async (_prevState: string | undefined, formData: FormData) => {
-      const result = await authenticate(formData, callbackUrl);
-      if ("error" in result) return result.error;
 
-      router.push(result.url);
-      // The header and the protected pages must render with the new session.
-      router.refresh();
-    },
-    undefined,
-  );
+  // Before the first read, so the server render matches
+  const store = useAppStore();
+  const isOpened = useRef<true | null>(null);
+  if (isOpened.current == null) {
+    store.dispatch(loginFormOpened());
+    isOpened.current = true;
+  }
+
+  const dispatch = useAppDispatch();
+  const errorMessage = useAppSelector(selectLoginError);
+  const isPending = useAppSelector(selectIsLoggingIn);
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (isPending) return;
+    const formData = new FormData(event.currentTarget);
+    const result = await dispatch(
+      logIn({
+        email: String(formData.get("email") ?? ""),
+        password: String(formData.get("password") ?? ""),
+        callbackUrl,
+      }),
+    );
+    // A client-side router.push here could replay the redirect to /login
+    // cached while signed out, leaving the user on this page.
+    if (logIn.fulfilled.match(result)) navigateWithReload(result.payload);
+  };
 
   return (
     <form
-      action={formAction}
+      onSubmit={handleSubmit}
       className="animate-scale-in rounded-3xl bg-white/95 p-7 shadow-lift backdrop-blur [animation-delay:100ms] sm:p-9"
     >
       <p className="text-xs font-medium uppercase tracking-[0.3em] text-gold-dark">

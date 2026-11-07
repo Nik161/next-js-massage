@@ -3,6 +3,7 @@ import Script from "next/script";
 import "./globals.css";
 import { cormorant, jost } from "@/app/ui/fonts";
 import { INTRO_SKIP_SCRIPT } from "@/app/ui/motion/intro-skip";
+import StoreProvider from "@/app/lib/store/store_provider";
 
 export const metadata: Metadata = {
   title: "Niko Massage",
@@ -27,7 +28,9 @@ export default function RootLayout({
           {INTRO_SKIP_SCRIPT}
         </Script>
         {/*<Header />*/}
-        <div>{children}</div>
+        <StoreProvider>
+          <div>{children}</div>
+        </StoreProvider>
       </body>
     </html>
   );

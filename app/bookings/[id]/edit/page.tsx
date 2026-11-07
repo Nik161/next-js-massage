@@ -31,7 +31,6 @@ export default async function Page(props: PageProps<"/bookings/[id]/edit">) {
   return (
     <div className="relative z-10 mx-auto -mt-12 w-full max-w-6xl px-4 pb-16">
       <CreateOrEditBookingForm
-        userName={user.name || user.email}
         booking={booking}
         therapists={therapists}
         massageTypes={massageTypes}
