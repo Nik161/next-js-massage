@@ -31,7 +31,19 @@ const nextConfig: NextConfig = {
     ],
   },
   async headers() {
-    return [{ source: "/:path*", headers: SECURITY_HEADERS }];
+    return [
+      // { source: "/:path*", headers: SECURITY_HEADERS },
+      {
+        source: "/(.*)",
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            value:
+              "frame-ancestors 'self' https://t.me https://web.telegram.org https://oauth.telegram.org;",
+          },
+        ],
+      },
+    ];
   },
 };
 
